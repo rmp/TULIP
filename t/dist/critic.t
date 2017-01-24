@@ -23,11 +23,10 @@ if($EVAL_ERROR) {
 
 } else {
   Test::Perl::Critic->import(
-			     -severity => 1,
+			     -severity => 5,
 			     -exclude  => [qw(CodeLayout::RequireTidyCode
 					      NamingConventions::Capitalization
-					      PodSpelling
-					      ValuesAndExpressions::RequireConstantVersion)],
+					      PodSpelling)],
 			    );
   all_critic_ok(qw(lib scripts bin));
 }

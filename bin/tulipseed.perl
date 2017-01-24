@@ -7,6 +7,7 @@ use Cwd;
 use Storable;
 use strict;
 use warnings;
+use IO::File;
 
 our $VERSION = q[0.4.0];
 # The Uncorrected Long-read Integration Process, seed layout
@@ -207,19 +208,20 @@ sub printHelp {
 }
 
 sub writeLog {
-        open LOG, ">$outputprefix".".layout_log";
-        print LOG join("\n",@log),"\n";
-        return();
-        }
+  my $io = IO::File->new(">$outputprefix.layout_log");
+  print $io join("\n",@log),"\n";
+  $io->close;
+  return();
+}
 
 sub printLog {
-        my $message = join("",@_);
-        chomp($message);
-        my @time = localtime();        
-        print "$message\n";
-        $message = join(":",(sprintf("%02d",$time[2]),sprintf("%02d",$time[1]),sprintf("%02d",$time[0])))."\t".$message; 
-        push @log, $message;
-        return();
+  my $message = join("",@_);
+  chomp $message;
+  my @time = localtime();        
+  print "$message\n";
+  $message = join(":",(sprintf("%02d",$time[2]),sprintf("%02d",$time[1]),sprintf("%02d",$time[0])))."\t".$message; 
+  push @log, $message;
+  return();
 }
 
 sub graphStats {
@@ -246,120 +248,139 @@ sub graphStats {
 }
 
 sub writeGraph { # 1 ignore;
-        if ($_[1] == 1) { return(); }
-        my $prefix = $_[0];
-        my $output = $prefix.".graph";
-        my $output2 = $prefix.".graph_tmp";
-        open OUTPUT, ">$output";
-        printLog("Writing graph to $output and $output2");
-        foreach my $k1 (sort keys %adjacency) {
-                foreach my $k2 (sort keys %{$adjacency{$k1}}) {
-                        $k1 =~ /^(.+)([io])$/; my @kk1 = ($1,$2);
-                        $k2 =~ /^(.+)([io])$/; my @kk2 = ($1,$2);
-                        next if ($kk2[0] lt $kk1[0]);
-                        print OUTPUT "$kk1[0]\t$kk1[1]$kk2[1]\t$kk2[0]\t",join("\t",@{$adjacency{$k1}{$k2}}),"\n";
-                        }
-                }
-        close OUTPUT;
-        store \%adjacency, $output2;
-        return();
+  if ($_[1] == 1) { return(); }
+  my $prefix = $_[0];
+  my $output = $prefix.".graph";
+  my $output2 = $prefix.".graph_tmp";
+
+  my $io = IO::File->new(">$output");
+
+  printLog("Writing graph to $output and $output2");
+  foreach my $k1 (sort keys %adjacency) {
+    foreach my $k2 (sort keys %{$adjacency{$k1}}) {
+      $k1 =~ /^(.+)([io])$/; my @kk1 = ($1,$2);
+      $k2 =~ /^(.+)([io])$/; my @kk2 = ($1,$2);
+      next if ($kk2[0] lt $kk1[0]);
+      print $io "$kk1[0]\t$kk1[1]$kk2[1]\t$kk2[0]\t",join("\t",@{$adjacency{$k1}{$k2}}),"\n";
+    }
+  }
+
+  $io->close;
+  store \%adjacency, $output2;
+  return();
 }
 
 sub writeScaffoldGraph { # 1 ignore;
-        if ($_[1] == 1) { return(); }
-        my $prefix = $_[0];
-        my $output = $prefix.".graph";
-        open OUTPUT, ">$output";
-        printLog("Writing scaffold graph to $output");
-        foreach my $k1 (sort keys %scafadjacency) {
-                foreach my $k2 (sort keys %{$scafadjacency{$k1}}) {
-                        $k1 =~ /^(.+)([io])$/; my @kk1 = ($1,$2);
-                        $k2 =~ /^(.+)([io])$/; my @kk2 = ($1,$2);
-                        next if ($kk2[0] lt $kk1[0]);
-                        print OUTPUT "$kk1[0]\t$kk1[1]$kk2[1]\t$kk2[0]\t",join("\t",@{$scafadjacency{$k1}{$k2}}),"\n";
-                        }
-                }
-        close OUTPUT;
-        return();
+  if ($_[1] == 1) { return(); }
+  my $prefix = $_[0];
+  my $output = $prefix.".graph";
+
+  my $io = IO::File->new(">$output");
+
+  printLog("Writing scaffold graph to $output");
+  foreach my $k1 (sort keys %scafadjacency) {
+    foreach my $k2 (sort keys %{$scafadjacency{$k1}}) {
+      $k1 =~ /^(.+)([io])$/; my @kk1 = ($1,$2);
+      $k2 =~ /^(.+)([io])$/; my @kk2 = ($1,$2);
+      next if ($kk2[0] lt $kk1[0]);
+      print $io "$kk1[0]\t$kk1[1]$kk2[1]\t$kk2[0]\t",join("\t",@{$scafadjacency{$k1}{$k2}}),"\n";
+    }
+  }
+
+  $io->close;
+  return();
 }
 
 sub writeScaffolds {
-        if ($_[0] == 1) { return(); }
-        my $scafoutput = $outputprefix.".scaffolds";
-        my $scafstats = $outputprefix.".scaffolds_stats";
-        open SCOUTPUT, ">$scafoutput";
-        open SCOUTPUTSTATS, ">$scafstats";
-        printLog("Writing scaffold information to $scafoutput and $scafstats");
-        foreach my $k1 (sort keys %scaffold) {
+  if ($_[0] == 1) { return(); }
+  my $scafoutput = $outputprefix.".scaffolds";
+  my $scafstats  = $outputprefix.".scaffolds_stats";
+
+  my $scoutput      = IO::File->new(">$scafoutput");
+  my $scoutputstats = IO::File->new(">$scafstats");
+
+  printLog("Writing scaffold information to $scafoutput and $scafstats");
+  foreach my $k1 (sort keys %scaffold) {
 #                print SCOUTPUT "$k1\t",join(" ",@{$scaffold{$k1}}),"\n";
-                print SCOUTPUT "$k1\t";
+    print $scoutput "$k1\t";
 #                if (exists $terminal{node($scaffold{$k1}[1])}) { print SCOUTPUT "*"; }
-                print SCOUTPUT join(" ",@{$scaffold{$k1}});
+    print $scoutput join(" ",@{$scaffold{$k1}});
 #                if (exists $terminal{node($scaffold{$k1}[-1])}) { print SCOUTPUT "*"; }
-                print SCOUTPUT "\n";
-                print SCOUTPUTSTATS "$k1\t$scaffold{$k1}[0]\t",sprintf("%.0f",$scaffoldlen{$k1}),"\n";
-                }
-        close SCOUTPUT;        
-        my $output2 = $outputprefix.".scaffolds_tmp";
-        my $output3 = $outputprefix.".seeds_tmp";
-        printLog("Writing temporary scaffold files to $output2 and $output3");        
-        store \%scaffold, $output2;        
-        store \%seeduse, $output3;                
-        return();
+    print $scoutput "\n";
+    print $scoutputstats "$k1\t$scaffold{$k1}[0]\t",sprintf("%.0f",$scaffoldlen{$k1}),"\n";
+  }
+
+  $scoutput->close;
+  $scoutputstats->close;
+
+  my $output2 = $outputprefix.".scaffolds_tmp";
+  my $output3 = $outputprefix.".seeds_tmp";
+  printLog("Writing temporary scaffold files to $output2 and $output3");        
+  store \%scaffold, $output2;        
+  store \%seeduse, $output3;                
+  return();
 }
 
 
 #### MAIN ALGORITHM SUBROUTINES
 
 sub determineSeedLength {
-        if (not $seedlength) {
-                open (FASTA, "<$seedsfiles[0]\n") or die "Error opening $_\n";
-                my $firstline = (<FASTA>);
-                if ($firstline !~ /^>/) { printHelp("$seedsfiles[0] is not a FASTA file\n"); }
-                my $secondline;
-                while (<FASTA>) {
-                        chomp;
-                        last if ($_ =~ /^>/);
-                        $secondline .= $_;
-                        }
-                $seedlength = length($secondline);
-                }
-        printLog("Seed length is $seedlength");        
-        return();
+  if (not $seedlength) {
+
+    my $io = IO::File->new($seedsfiles[0]);
+
+    my $firstline = (<$io>);
+    if ($firstline !~ /^>/) { printHelp("$seedsfiles[0] is not a FASTA file\n"); }
+
+    my $secondline;
+    while (<$io>) {
+      chomp;
+      last if ($_ =~ /^>/);
+      $secondline .= $_;
+    }
+    $seedlength = length $secondline;
+
+    $io->close;
+  }
+
+  printLog("Seed length is $seedlength");        
+  return();
 }
 
 sub initGraph {
-        %adjacency = ();
-        %linklength = ();
-        @{$adjacency{"0i"}{"0i"}} = (0,0,0,0,0);
-        $blacklist{0}++;
-        return();
+  %adjacency = ();
+  %linklength = ();
+  @{$adjacency{"0i"}{"0i"}} = (0,0,0,0,0);
+  $blacklist{0}++;
+  return();
 }        
 
 sub deleteNullNode {
-        my @adjlist = keys %{$adjacency{"0i"}};
-        while (@adjlist) {
-                my $del = shift @adjlist;
-                deleteLink("0i",$del);
-                }
-        return();
+  my @adjlist = keys %{$adjacency{"0i"}};
+  while (@adjlist) {
+    my $del = shift @adjlist;
+    deleteLink("0i",$del);
+  }
+  return();
 }
 
 sub readGraph { # format: 1000        io        999        15        1        908        972.466666666667        1059        61        ok
-        open INPUT, "<$debuggraph";
-        while (<INPUT>) {
-                chomp;
-                my @x = split /\t/,$_;
-                $x[0] .= substr($x[1],0,1);
-                $x[2] .= substr($x[1],1,1);
-                my $a1 = $x[0];
-                my $a2 = $x[2];
-                shift @x; shift @x; shift @x;
-                push @{$adjacency{$a1}{$a2}},@x;
-                push @{$adjacency{$a2}{$a1}},@x;
-                }
-        close INPUT;
-        return();
+
+  my $io = IO::File->new($debuggraph);
+  while (<$io>) {
+    chomp;
+    my @x = split /\t/,$_;
+    $x[0] .= substr($x[1],0,1);
+    $x[2] .= substr($x[1],1,1);
+    my $a1 = $x[0];
+    my $a2 = $x[2];
+    shift @x; shift @x; shift @x;
+    push @{$adjacency{$a1}{$a2}},@x;
+    push @{$adjacency{$a2}{$a1}},@x;
+  }
+
+  $io->close;
+  return();
 }
         
 sub constructGraph {
@@ -371,82 +392,82 @@ sub constructGraph {
         my %stack;
         my @filesstack;
         if ($configfile) {
-                open CONF, "<$configfile";
-                while (<CONF>) {
-                        my @cnf = split /[\s\t]+/,$_; # dalinger alignmentfile fasta
-                        if (scalar @cnf != 3) { die "Invalid configuration file: $_\n"; }
-                        if ($cnf[0] ne "daligner" && $cnf[0] ne "coords" && $cnf[0] ne "blasr" && $cnf[0] ne "sam") { die "Invalid configuration file: $_\n"; }
-                        push @filesstack, "$cnf[0]\t$cnf[1]";
-                        }
-                close CONF;        
-                }
+	  my $io = IO::File->new($configfile);
+	  while (<$io>) {
+	    my @cnf = split /[\s\t]+/,$_; # dalinger alignmentfile fasta
+	    if (scalar @cnf != 3) { die "Invalid configuration file: $_\n"; }
+	    if ($cnf[0] ne "daligner" && $cnf[0] ne "coords" && $cnf[0] ne "blasr" && $cnf[0] ne "sam") { die "Invalid configuration file: $_\n"; }
+	    push @filesstack, "$cnf[0]\t$cnf[1]";
+	  }
+	  $io->close;
+	}
         else {        
-                foreach (@mummercoords) { push @filesstack, "coords\t$_"; }
-                foreach (@blasr) { push @filesstack, "blasr\t$_"; }
-                foreach (@daligner) { push @filesstack, "daligner\t$_"; }
-                foreach (@sam) { push @filesstack, "sam\t$_"; }
-                }
+	  foreach (@mummercoords) { push @filesstack, "coords\t$_"; }
+	  foreach (@blasr) { push @filesstack, "blasr\t$_"; }
+	  foreach (@daligner) { push @filesstack, "daligner\t$_"; }
+	  foreach (@sam) { push @filesstack, "sam\t$_"; }
+	}
+
         my $filecounter = 0;
         foreach (@filesstack) {
-                my @openfile = split /\t/,$_;
-                $filecounter++;
-                printLog("Reading alignment coordinates from $openfile[1]");
-                open (COORDS, "<$openfile[1]") or die "Error opening $openfile[1]\n";
-                seek (COORDS,0,0); # not sure if necessary, reset to first byte on second opening
-                if ($openfile[0] eq "daligner") { my $devnull = <COORDS>; $devnull = <COORDS>; }
-                $currentread = "";
-                while (<COORDS>) {
-                        chomp;
-                        my @data;
-                        if ($openfile[0] eq "daligner") { 
-                                @data = daligner2Coords($_); # not tab-sep, parse as string
-                                next if (not @data);
-                                }
-                        elsif ($openfile[0] eq "blasr") {
-                                @data = split /[\t\s]/,$_;
-                                @data = blasr2Coords(@data);
-                                }
-                        elsif ($openfile[0] eq "sam") {
-                                next if ($_ =~ /^@/);
-                                @data = split /[\t\s]/,$_;
-                                @data = sam2Coords(@data);
-                                }
-                        else {
-                                @data = split /[\t\s]/,$_;
-                                $data[6] = $data[6]/100; # pct identitity scale
-                                }
-                        next if (scalar @data == 0);
-                        $data[7] =~ /(\d+)$/; # remove sometime, included for a legacy alignment file
-                        $data[7] = $1; # remove sometime, included for a legacy alignment file
-                        next if ($data[7] == 0); # reserved node name
-                        next if (exists $blacklist{$data[7]});
-                        if ($data[4] < $threshold) { $alignok = 0; } else { $alignok = 1; }
-                        @data = extrapolateSeed(@data);
-                        if ($alignmentidentity && $data[6] < $alignmentidentity) { $alignok = 0; }
-                        if ($currentread eq "") { $currentread = $data[8]; } # first line in alignment file
-                        my @positions = sort {$a <=> $b} ($data[2],$data[3]);
-                        my $orientation;
-                        if ($positions[0] eq $data[2]) { $orientation = "f"; } else { $orientation = "r"; }
-                        if ($data[8] eq $currentread) {
-                                if (exists $stack{$positions[0]}) {        # same alignment position already occupied
-                                        if ($stack{$positions[0]}[4] ne $data[7]) {
-                                                }
-                                        next;
-                                        }
-                                if ($alignok) {        push @{$stack{$positions[0]}}, ($data[0],$data[1],$positions[1],$orientation,$data[7],$data[8]); } # seedstart seedend position orientation seedname readname
-                                next;
-                                }
-                        else {
-                                ($usedcount,$mode2count,$readignorecount,$newlinksadded,$linksadded) = addLinks($readmode,\%seedcount,\%stack,$usedcount,$mode2count,$readignorecount,$filecounter,$newlinksadded,$linksadded);
-                                $currentread = $data[8];
-                                $readcount++;
-                                %stack = ();
-                                if ($alignok) { push @{$stack{$positions[0]}}, ($data[0],$data[1],$positions[1],$orientation,$data[7],$data[8]); } # seedstart seedend position orientation seedname readname
-                                } # wrap up read 
-                        }
-                ($usedcount,$mode2count,$readignorecount,$newlinksadded,$linksadded) = addLinks($readmode,\%seedcount,\%stack,$usedcount,$mode2count,$readignorecount,$filecounter,$newlinksadded,$linksadded);
-                close COORDS;
-                } # each file
+	  my @openfile = split /\t/,$_;
+	  $filecounter++;
+	  printLog("Reading alignment coordinates from $openfile[1]");
+	  my $io = IO::File->new($openfile[1]) or die "Error opening $openfile[1]\n";
+	  if ($openfile[0] eq "daligner") { my $devnull = <$io>; $devnull = <$io>; }
+	  $currentread = "";
+	  while (<$io>) {
+	    chomp;
+	    my @data;
+	    if ($openfile[0] eq "daligner") { 
+	      @data = daligner2Coords($_); # not tab-sep, parse as string
+	      next if (not @data);
+	    }
+	    elsif ($openfile[0] eq "blasr") {
+	      @data = split /[\t\s]/,$_;
+	      @data = blasr2Coords(@data);
+	    }
+	    elsif ($openfile[0] eq "sam") {
+	      next if ($_ =~ /^@/);
+	      @data = split /[\t\s]/,$_;
+	      @data = sam2Coords(@data);
+	    }
+	    else {
+	      @data = split /[\t\s]/,$_;
+	      $data[6] = $data[6]/100; # pct identitity scale
+	    }
+	    next if (scalar @data == 0);
+	    $data[7] =~ /(\d+)$/; # remove sometime, included for a legacy alignment file
+	    $data[7] = $1; # remove sometime, included for a legacy alignment file
+	    next if ($data[7] == 0); # reserved node name
+	    next if (exists $blacklist{$data[7]});
+	    if ($data[4] < $threshold) { $alignok = 0; } else { $alignok = 1; }
+	    @data = extrapolateSeed(@data);
+	    if ($alignmentidentity && $data[6] < $alignmentidentity) { $alignok = 0; }
+	    if ($currentread eq "") { $currentread = $data[8]; } # first line in alignment file
+	    my @positions = sort {$a <=> $b} ($data[2],$data[3]);
+	    my $orientation;
+	    if ($positions[0] eq $data[2]) { $orientation = "f"; } else { $orientation = "r"; }
+	    if ($data[8] eq $currentread) {
+	      if (exists $stack{$positions[0]}) {        # same alignment position already occupied
+		if ($stack{$positions[0]}[4] ne $data[7]) {
+		}
+		next;
+	      }
+	      if ($alignok) {        push @{$stack{$positions[0]}}, ($data[0],$data[1],$positions[1],$orientation,$data[7],$data[8]); } # seedstart seedend position orientation seedname readname
+	      next;
+	    }
+	    else {
+	      ($usedcount,$mode2count,$readignorecount,$newlinksadded,$linksadded) = addLinks($readmode,\%seedcount,\%stack,$usedcount,$mode2count,$readignorecount,$filecounter,$newlinksadded,$linksadded);
+	      $currentread = $data[8];
+	      $readcount++;
+	      %stack = ();
+	      if ($alignok) { push @{$stack{$positions[0]}}, ($data[0],$data[1],$positions[1],$orientation,$data[7],$data[8]); } # seedstart seedend position orientation seedname readname
+	    } # wrap up read 
+	  }
+	  ($usedcount,$mode2count,$readignorecount,$newlinksadded,$linksadded) = addLinks($readmode,\%seedcount,\%stack,$usedcount,$mode2count,$readignorecount,$filecounter,$newlinksadded,$linksadded);
+	  $io->close;
+	} # each file
         if ($readmode == 1) {
                 printLog("$readcount long reads, ",scalar keys %seedcount," seeds, ",sprintf("%.2f",$usedcount/$readcount)," seeds per read");
                 if (not $newlinksadded) { return (0); }
@@ -541,40 +562,43 @@ sub removeSuspectLinks {
 }
 
 sub determineCoverage {
-        my @evidence;
-        my $sample = 0;
-        my $maxsample = 10000; # do not look beyond 10000 random adjacencies
-        K1LOOP: foreach my $k1 (keys %adjacency) {
-                foreach my $k2 (keys %{$adjacency{$k1}}) {
-                        push @evidence, $adjacency{$k1}{$k2}[0];
-                        $sample++;
-                        if ($sample >= $maxsample) { last K1LOOP; }
-                        }
-                }
-        $sample = int($#evidence*$coveragepercentile);
-        @evidence = sort {$a <=> $b} @evidence;
-        $mediancoverage = sprintf("%.0f",$evidence[$sample]);
-        #print "Median coverage $mediancoverage\n";
-        return($mediancoverage);
+  my @evidence;
+  my $sample = 0;
+  my $maxsample = 10000; # do not look beyond 10000 random adjacencies
+ K1LOOP: foreach my $k1 (keys %adjacency) {
+    foreach my $k2 (keys %{$adjacency{$k1}}) {
+      push @evidence, $adjacency{$k1}{$k2}[0];
+      $sample++;
+      if ($sample >= $maxsample) { last K1LOOP; }
+    }
+  }
+  $sample = int($#evidence*$coveragepercentile);
+  @evidence = sort {$a <=> $b} @evidence;
+  $mediancoverage = sprintf("%.0f",$evidence[$sample]);
+  #print "Median coverage $mediancoverage\n";
+  return($mediancoverage);
 }
 
 sub removeProbableRepeatNodes {
-        my %delnomination;
-        print "Using high coverage to identify repeat nodes\n";
-        foreach my $k1 (keys %adjacency) {
-                foreach my $k2 (keys %{$adjacency{$k1}}) {
-                        $delnomination{$k1} += $adjacency{$k1}{$k2}[0];
-                        $delnomination{$k2} += $adjacency{$k1}{$k2}[0];
-                        }
-                }
-        my $actuallydeleted = 0;        
-        foreach (keys %delnomination) {
-                next if ($delnomination{$_} <= $highcoverage*$mediancoverage);
-                $actuallydeleted += deleteNode(node($_));
-                $blacklist{node($_)}++;
-                }
-        printLog("Removed $actuallydeleted putative repeat nodes based on high coverage\n");        
-        return();
+  my %delnomination;
+
+  print "Using high coverage to identify repeat nodes\n";
+  foreach my $k1 (keys %adjacency) {
+    foreach my $k2 (keys %{$adjacency{$k1}}) {
+      $delnomination{$k1} += $adjacency{$k1}{$k2}[0];
+      $delnomination{$k2} += $adjacency{$k1}{$k2}[0];
+    }
+  }
+
+  my $actuallydeleted = 0;        
+  foreach (keys %delnomination) {
+    next if ($delnomination{$_} <= $highcoverage*$mediancoverage);
+    $actuallydeleted += deleteNode(node($_));
+    $blacklist{node($_)}++;
+  }
+
+  printLog("Removed $actuallydeleted putative repeat nodes based on high coverage\n");        
+  return();
 }
 
 sub simplifyGraph {

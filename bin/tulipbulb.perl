@@ -8,6 +8,7 @@ use Storable;
 use Scalar::Util qw(looks_like_number);
 use strict;
 use warnings;
+use IO::File;
 
 our $VERSION = q[0.4.0];
 
@@ -122,8 +123,10 @@ exit;
 #### DEBUG
 sub writeGraph { # 0 ignore;
   if ($_[0] == 0) { return(); }
+
   my $output = $outputprefix.".graph";
-  open OUTPUT, ">$output";
+  my $io     = IO::File->new(">$output");
+
   printLog("Writing graph to $output");
 
   foreach my $k1 (sort keys %$adjacency) {
@@ -131,11 +134,11 @@ sub writeGraph { # 0 ignore;
       $k1 =~ /^(.+)([io])$/; my @kk1 = ($1,$2);
       $k2 =~ /^(.+)([io])$/; my @kk2 = ($1,$2);
       next if ($kk2[0] lt $kk1[0]);
-      print OUTPUT "$kk1[0]\t$kk1[1]$kk2[1]\t$kk2[0]\t",join("\t",@{$$adjacency{$k1}{$k2}}),"\n";
+      print $io "$kk1[0]\t$kk1[1]$kk2[1]\t$kk2[0]\t",join("\t",@{$$adjacency{$k1}{$k2}}),"\n";
     }
   }
 
-  close OUTPUT;
+  $io->close;
   return();
 }
 
