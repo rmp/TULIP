@@ -144,7 +144,7 @@ sub writeGraph { # 0 ignore;
 sub printHelp {
   if (@_) { print "Error:         $_[0]\n"; }
 
-  print <<"EOT"
+  print <<"EOT";
 Usage:         ./bundlesequences.perl --seeds seeds.fasta --reads reads.fasta --sam bwamem.sam --input prefix
                ./bundlesequences.perl --seeds seeds.fasta --config config.txt --input prefix
 
