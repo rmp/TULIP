@@ -1,0 +1,18 @@
+bin/tulipbulb.perl
+bin/tulipseed.perl
+Build.PL
+Changes
+debian/control.tmpl
+lib/.exists
+MANIFEST			This list of files
+META.yml
+README
+README.md
+t/dist/changes.t
+t/dist/compile-pl.t
+t/dist/critic.t
+t/dist/distribution.t
+t/dist/kwalitee.t
+t/dist/pod.t
+t/dist/podcoverage.t
+tap-harness-junit.xml
