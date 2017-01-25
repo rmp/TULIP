@@ -13,6 +13,7 @@ cover: setup
 	./Build testcover
 
 manifest: setup
+	touch MANIFEST
 	rm MANIFEST
 	./Build manifest
 

@@ -24,7 +24,7 @@ BEGIN {
   eval {
     require Test::Kwalitee;
 
-    Test::Kwalitee->import( tests => [ qw( -no_symlinks ) ] );
+    Test::Kwalitee->import( tests => [ qw( -use_strict -no_symlinks -has_abstract_in_pod -has_license_in_source_file) ] );
   };
 
   if($@) {

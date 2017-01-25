@@ -19,7 +19,7 @@ our $VERSION = q[0.4.0];
 # Merge subs collapseLinks & collapseScaffoldLinks
 
 
-my $version = "0.4 late 2016 (European eel)";
+my $version = "$VERSION late 2016 (European eel)";
 my @log = ("TULIP seed layout $version");
 push @log, "Command line ",join(" ",($0,@ARGV));
 push @log, "Directory ",cwd();
@@ -187,24 +187,35 @@ exit;
 #### IO SUBROUTINES
 
 sub printHelp {
-        print "TULIP-seeds:    The Uncorrected Long-read Intergration Process, seed layout stage\n\n";
-        if (@_) { print "Error:         $_[0]\n\n"; }
-        print "Usage:         ./tulipseed.perl --seeds seeds.fasta --sam bwamem.sam\n";
-        print "               ./tulipseed.perl --seedlength 250 --sam bwamem.sam\n";
-        print "               ./tulipseed.perl --seedlength 250 --config configfile.txt\n\n";
-        print "Options:\n";
-        print "--out          Output prefix, default \'out\'\n";
-        print "--error        Tolerance of alignment length differences, default = 0.1 (10%)\n";
-        print "--filter       Ignore alignments with less seed coverage, default = 0.95 (95%)\n";
-        print "--identity     If set, ignore alignments with lesser sequence identity (e.g. 0.9 = 90%), default off (0)\n";
-        print "--haploid      Treat graph bubbles as errors to be fixed (default)\n";
-        print "--diploid      Treat graph bubbles as alleles\n";
-        print "--minorpath    The minimum path evidence to be treated as allele, default = 0.25 (25%)\n";
-        print "--coverage     Ignore links with less evidence, default = 1\n";
-        print "Authors:       Christiaan Henkel & Michael Liem, Leiden University & University of Applied Sciences Leiden\n";
-        print "Contact:       c.v.henkel\@biology.leidenuniv.nl\n";
-        print "Version:       $version\n";
-        exit;
+  my ($err) = @_;
+
+  print "TULIP-seeds:    The Uncorrected Long-read Intergration Process, seed layout stage";
+
+  if ($err) {
+    print "Error:         $err";
+  }
+  
+  print <<"EOT";
+
+
+  Usage:         ./tulipseed.perl --seeds seeds.fasta --sam bwamem.sam
+                 ./tulipseed.perl --seedlength 250 --sam bwamem.sam
+                 ./tulipseed.perl --seedlength 250 --config configfile.txt\n
+  Options:
+  --out          Output prefix, default \'out\'
+  --error        Tolerance of alignment length differences, default = 0.1 (10%)
+  --filter       Ignore alignments with less seed coverage, default = 0.95 (95%)
+  --identity     If set, ignore alignments with lesser sequence identity (e.g. 0.9 = 90%), default off (0)
+  --haploid      Treat graph bubbles as errors to be fixed (default)
+  --diploid      Treat graph bubbles as alleles
+  --minorpath    The minimum path evidence to be treated as allele, default = 0.25 (25%)
+  --coverage     Ignore links with less evidence, default = 1
+  Authors:       Christiaan Henkel & Michael Liem, Leiden University & University of Applied Sciences Leiden
+  Contact:       c.v.henkel\@biology.leidenuniv.nl
+  Version:       $version
+EOT
+
+  exit;
 }
 
 sub writeLog {
@@ -2360,3 +2371,55 @@ sub daligner2Coords {
     #return ($6+1,$7,$5,$4+1,$7-$6,$5-$4,1-($8/($5-$4)),$2,$1);
   }
 }
+
+__END__
+
+=head1 NAME
+
+tulipseed - The Uncorrected Long-read Intergration Process, seed layout stage
+
+=head1 VERSION
+
+VERSION = q[0.4.0]
+
+=head1 SYNOPSIS
+
+=head1 DESCRIPTION
+
+=head1 SUBROUTINES/METHODS
+
+=head1 DIAGNOSTICS
+
+=head1 CONFIGURATION AND ENVIRONMENT
+
+=head1 DEPENDENCIES
+
+=over
+
+=item strict
+
+=item Getopt::Long
+
+=item Cwd
+
+=item Storable
+
+=item strict
+
+=item warnings
+
+=item IO::File
+
+=back
+
+=head1 INCOMPATIBILITIES
+
+=head1 BUGS AND LIMITATIONS
+
+=head1 AUTHOR
+
+=head1 LICENSE AND COPYRIGHT
+
+ See LICENSE file.
+
+=cut

@@ -1,9 +1,10 @@
-bin/tulipbulb.perl
-bin/tulipseed.perl
+bin/tulipbulb
+bin/tulipseed
 Build.PL
 Changes
 debian/control.tmpl
 lib/.exists
+LICENSE
 MANIFEST			This list of files
 META.yml
 README

@@ -33,7 +33,7 @@ my $builder = Module::Build->new(
                                                           'Test::Distribution'      => '2.00',
                                                           'Test::Perl::Critic'      => '1.01',
                                                          },
-                                 script_files         => [qw(bin/tulipbulb.perl bin/tulipseed.perl)],
+                                 script_files         => [qw(bin/tulipbulb bin/tulipseed)],
                                  use_tap_harness      => 1,
                                  recursive_test_files => 1,
                                  tap_harness_args     => {
