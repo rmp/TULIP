@@ -241,13 +241,13 @@ sub graphStats {
         my %connectioncount;
         my %seeds;
         my @length;
-        foreach my $k1 (keys %adjacency) {
+        for my $k1 (keys %adjacency) {
                 $k1 =~ /^(.+)([io])$/;
                 $seeds{$1} = 1;
                 my $k1con = connectionCount($k1);
                 if ($2 eq "i") { $incount{$k1con}++; $connectioncount{$k1con}++; }
                 if ($2 eq "o") { $outcount{$k1con}++; $connectioncount{$k1con}++; }
-                foreach my $k2 (keys %{$adjacency{$k1}}) {
+                for my $k2 (keys %{$adjacency{$k1}}) {
                         $length[0] += $adjacency{$k1}{$k2}[2];
                         $length[1] += $adjacency{$k1}{$k2}[3];
                         $length[2] += $adjacency{$k1}{$k2}[4];
@@ -267,8 +267,8 @@ sub writeGraph { # 1 ignore;
   my $io = IO::File->new(">$output");
 
   printLog("Writing graph to $output and $output2");
-  foreach my $k1 (sort keys %adjacency) {
-    foreach my $k2 (sort keys %{$adjacency{$k1}}) {
+  for my $k1 (sort keys %adjacency) {
+    for my $k2 (sort keys %{$adjacency{$k1}}) {
       $k1 =~ /^(.+)([io])$/; my @kk1 = ($1,$2);
       $k2 =~ /^(.+)([io])$/; my @kk2 = ($1,$2);
       next if ($kk2[0] lt $kk1[0]);
@@ -289,8 +289,8 @@ sub writeScaffoldGraph { # 1 ignore;
   my $io = IO::File->new(">$output");
 
   printLog("Writing scaffold graph to $output");
-  foreach my $k1 (sort keys %scafadjacency) {
-    foreach my $k2 (sort keys %{$scafadjacency{$k1}}) {
+  for my $k1 (sort keys %scafadjacency) {
+    for my $k2 (sort keys %{$scafadjacency{$k1}}) {
       $k1 =~ /^(.+)([io])$/; my @kk1 = ($1,$2);
       $k2 =~ /^(.+)([io])$/; my @kk2 = ($1,$2);
       next if ($kk2[0] lt $kk1[0]);
@@ -311,7 +311,7 @@ sub writeScaffolds {
   my $scoutputstats = IO::File->new(">$scafstats");
 
   printLog("Writing scaffold information to $scafoutput and $scafstats");
-  foreach my $k1 (sort keys %scaffold) {
+  for my $k1 (sort keys %scaffold) {
 #                print SCOUTPUT "$k1\t",join(" ",@{$scaffold{$k1}}),"\n";
     print $scoutput "$k1\t";
 #                if (exists $terminal{node($scaffold{$k1}[1])}) { print SCOUTPUT "*"; }
@@ -413,14 +413,14 @@ sub constructGraph {
 	  $io->close;
 	}
         else {        
-	  foreach (@mummercoords) { push @filesstack, "coords\t$_"; }
-	  foreach (@blasr) { push @filesstack, "blasr\t$_"; }
-	  foreach (@daligner) { push @filesstack, "daligner\t$_"; }
-	  foreach (@sam) { push @filesstack, "sam\t$_"; }
+	  for (@mummercoords) { push @filesstack, "coords\t$_"; }
+	  for (@blasr) { push @filesstack, "blasr\t$_"; }
+	  for (@daligner) { push @filesstack, "daligner\t$_"; }
+	  for (@sam) { push @filesstack, "sam\t$_"; }
 	}
 
         my $filecounter = 0;
-        foreach (@filesstack) {
+        for (@filesstack) {
 	  my @openfile = split /\t/,$_;
 	  $filecounter++;
 	  printLog("Reading alignment coordinates from $openfile[1]");
@@ -493,12 +493,12 @@ sub constructGraph {
 
 sub calculateLinkDistances {
         print "Calculating link distance metrics\n"; # currently the standard deviation
-        foreach my $k1 (keys %linklength) {
-                foreach my $k2 (keys %{$linklength{$k1}}) {
+        for my $k1 (keys %linklength) {
+                for my $k2 (keys %{$linklength{$k1}}) {
                         my @ll = sort {$a <=> $b} @{$linklength{$k1}{$k2}};
                         my $stdev = 0; my $squares = 0;
                         if (scalar @ll > 1) {
-                                foreach(@ll) {
+                                for(@ll) {
                                         $squares += ($adjacency{$k1}{$k2}[3] - $_)**2;
                                         }
                                 $stdev = ($squares/(scalar @ll))**0.5;
@@ -518,8 +518,8 @@ sub removeSuspectLinks {
         my @deleteme;
         my $lowcov = 0; my $ratio = 0; my $interval = 0; my $connect = 0; my $self = 0; # my $overlapping = 0;
         print "Finding suspect links\n";
-        foreach my $first (sort keys %{$graphref}) {
-                foreach my $second (sort keys %{$$graphref{$first}}) {
+        for my $first (sort keys %{$graphref}) {
+                for my $second (sort keys %{$$graphref{$first}}) {
                         next if (node($first) < node($second));
                         next if ($first eq "0i");
                         next if ($second eq "0i");
@@ -576,8 +576,8 @@ sub determineCoverage {
   my @evidence;
   my $sample = 0;
   my $maxsample = 10000; # do not look beyond 10000 random adjacencies
- K1LOOP: foreach my $k1 (keys %adjacency) {
-    foreach my $k2 (keys %{$adjacency{$k1}}) {
+ K1LOOP: for my $k1 (keys %adjacency) {
+    for my $k2 (keys %{$adjacency{$k1}}) {
       push @evidence, $adjacency{$k1}{$k2}[0];
       $sample++;
       if ($sample >= $maxsample) { last K1LOOP; }
@@ -594,15 +594,15 @@ sub removeProbableRepeatNodes {
   my %delnomination;
 
   print "Using high coverage to identify repeat nodes\n";
-  foreach my $k1 (keys %adjacency) {
-    foreach my $k2 (keys %{$adjacency{$k1}}) {
+  for my $k1 (keys %adjacency) {
+    for my $k2 (keys %{$adjacency{$k1}}) {
       $delnomination{$k1} += $adjacency{$k1}{$k2}[0];
       $delnomination{$k2} += $adjacency{$k1}{$k2}[0];
     }
   }
 
   my $actuallydeleted = 0;        
-  foreach (keys %delnomination) {
+  for (keys %delnomination) {
     next if ($delnomination{$_} <= $highcoverage*$mediancoverage);
     $actuallydeleted += deleteNode(node($_));
     $blacklist{node($_)}++;
@@ -626,8 +626,8 @@ sub simplifyGraph {
         my $sortmergestack = 1; 
         @{$nodestack{"tip"}} = (); @{$nodestack{"longtip"}} = (); @{$nodestack{"simplebubble"}} = (); @{$nodestack{"bubble"}} = (); @{$nodestack{"connection"}} = (); @{$nodestack{"repeat"}} = (); @{$nodestack{"realrepeat"}} = (); @{$nodestack{"mayberepeat"}} = (); @{$nodestack{"loop"}} = (); @{$nodestack{"decision"}} = ();
         my %adjlength;
-        foreach my $nodei (keys %adjacency) {
-                foreach my $nodej (keys %{$adjacency{$nodei}}) {
+        for my $nodei (keys %adjacency) {
+                for my $nodej (keys %{$adjacency{$nodei}}) {
                         if (exists $adjlength{$nodei}) {
                                 if ($adjlength{$nodei} > $adjacency{$nodei}{$nodej}[3]) {
                                         $adjlength{$nodei} = $adjacency{$nodei}{$nodej}[3];
@@ -703,7 +703,7 @@ sub simplifyGraph {
                 elsif ($status eq "Linearizing") { 
                         my @linearizationsuccess = linearizeNode($anode1,$anode2,$a1con,$a2con,$linearization);
                         $simplifycounter{"connection"} += shift @linearizationsuccess;
-                        foreach (@linearizationsuccess) {
+                        for (@linearizationsuccess) {
                                 push @{$nodestack{"collapse"}}, $_;
                                 }
                         push @{$nodestack{"loop"}}, $anode1;
@@ -737,10 +737,10 @@ sub simplifyGraph {
                 elsif ($status eq "Deleting") {
                         my @nbnodes;
                         if ($a1con) {
-                                foreach (keys %{$adjacency{$anode1}}) { push @nbnodes, ($_,opposite($_)); } # second chance for the neighbouring nodes
+                                for (keys %{$adjacency{$anode1}}) { push @nbnodes, ($_,opposite($_)); } # second chance for the neighbouring nodes
                                 }
                         if ($a2con) {
-                                foreach (keys %{$adjacency{$anode2}}) { push @nbnodes, ($_,opposite($_)); }
+                                for (keys %{$adjacency{$anode2}}) { push @nbnodes, ($_,opposite($_)); }
                                 }
                         my $repeatsuccess = deleteRepeatNode($anode1,$anode2,$a1con,$a2con,"check");        
                         $simplifycounter{"repeat"} += $repeatsuccess;
@@ -748,18 +748,18 @@ sub simplifyGraph {
                         }
                 } # MAINLOOP
         my $totalsimplification = 0;
-        foreach (values %simplifycounter) {
+        for (values %simplifycounter) {
                 $totalsimplification += $_;
                 }
         printLog("$totalsimplification graph simplifications");
-#        foreach (sort keys %simplifycounter) { print "$_\t$simplifycounter{$_}\n"; }
+#        for (sort keys %simplifycounter) { print "$_\t$simplifycounter{$_}\n"; }
         return();
 }                
 
 sub markTerminalNodes {
         print "Indexing terminal nodes... ";
         %terminal = ();
-        foreach my $candidate (keys %adjacency) {
+        for my $candidate (keys %adjacency) {
                 my $anode = node($candidate);
                 next if (exists $blacklist{$anode});
                 next if (exists $adjacency{opposite($candidate)});
@@ -772,7 +772,7 @@ sub markTerminalNodes {
 sub markSubterminalNodes {
         print "Indexing subterminal nodes... ";
         %subterminal = ();
-        foreach my $startpoint (values %terminal) { # values are seed.orientation dead ends
+        for my $startpoint (values %terminal) { # values are seed.orientation dead ends
                 my $pathlength = 0;
                 my $pathnodes = 0;
                 my $currentnode = opposite($startpoint);
@@ -803,8 +803,8 @@ sub extractScaffolds {
         my $scaffoldcounter = 0;
         %scaffold = ();        
         print "Indexing scaffolds\n";
-        foreach my $scafmode("linear","circular") {
-                foreach my $startadj (sort keys %adjacency) {
+        for my $scafmode("linear","circular") {
+                for my $startadj (sort keys %adjacency) {
                         next if ($startadj eq "0i");
                         if ($scafmode eq "linear") { # try all linear scaffolds first
                                 next if (exists $adjacency{opposite($startadj)}); # not a terminal
@@ -862,14 +862,14 @@ sub extractScaffolds {
 
 sub buildScaffoldGraph {
         print "Constructing the scaffold graph\n";
-        foreach my $sc (keys %scaffold) {
+        for my $sc (keys %scaffold) {
                 next if ($scaffold{$sc}[0] eq "circular");
                 $scafend{$scaffold{$sc}[1]} = $sc."i"; 
                 $scafend{$scaffold{$sc}[-1]} = $sc."o";
                 }
-        foreach my $sc (keys %scaffold) {        
+        for my $sc (keys %scaffold) {        
                 if (exists $adjacency{$scaffold{$sc}[1]}) {
-                        foreach my $target (keys %{$adjacency{$scaffold{$sc}[1]}}) {
+                        for my $target (keys %{$adjacency{$scaffold{$sc}[1]}}) {
                                 if (exists $scafend{$target}) {
                                         @{$scafadjacency{$scafend{$target}}{$sc."i"}} = @{$adjacency{$scaffold{$sc}[1]}{$target}};
                                         @{$scafadjacency{$sc."i"}{$scafend{$target}}} = @{$adjacency{$scaffold{$sc}[1]}{$target}};
@@ -877,7 +877,7 @@ sub buildScaffoldGraph {
                                 }
                         }
                 if (exists $adjacency{$scaffold{$sc}[-1]}) {
-                        foreach my $target (keys %{$adjacency{$scaffold{$sc}[-1]}}) {
+                        for my $target (keys %{$adjacency{$scaffold{$sc}[-1]}}) {
                                 if (exists $scafend{$target}) {
                                         @{$scafadjacency{$scafend{$target}}{$sc."o"}} = @{$adjacency{$scaffold{$sc}[-1]}{$target}};
                                         @{$scafadjacency{$sc."o"}{$scafend{$target}}} = @{$adjacency{$scaffold{$sc}[-1]}{$target}};
@@ -892,7 +892,7 @@ sub buildScaffoldGraph {
 sub simplifyScaffoldGraph {
         print "Simplifying the scaffold graph\n";
         my $delcounter = 0;
-        foreach my $currentscaffold (sort keys %scaffold) {
+        for my $currentscaffold (sort keys %scaffold) {
                 my $anode1 = $currentscaffold."i"; my $anode2 = $currentscaffold."o";
                 my $a1con = connectionCountS($anode1); my $a2con = connectionCountS($anode2);
                 if ($a1con) {
@@ -914,8 +914,8 @@ sub resetScaffolds {
         %seeduse = ();
         %scafend = ();
         %scafadjacency = ();
-        foreach my $xnode (keys %adjacency) {
-                foreach my $ynode (keys %{$adjacency{$xnode}}) {
+        for my $xnode (keys %adjacency) {
+                for my $ynode (keys %{$adjacency{$xnode}}) {
                         while (scalar @{$adjacency{$xnode}{$ynode}} > 6) {
                                 pop @{$adjacency{$xnode}{$ynode}};
                                 }
@@ -927,7 +927,7 @@ sub resetScaffolds {
 sub addSalvagedLinks {
         print "Adding salvaged links (",scalar keys %salvagedadjacency," available)\n";
         my $scounter = 0;
-        foreach my $anode1 (keys %adjacency) {
+        for my $anode1 (keys %adjacency) {
                 my $anode2 = opposite($anode1);
                 next if (connectionCount($anode2));
                 if (exists $salvagedadjacency{$anode2}) {
@@ -1003,132 +1003,145 @@ sub extrapolateSeed {
 }
 
 sub addLinks {
-        (my $readmode, my $seedcountref, my $stackref, my $usedcount, my $mode2count, my $readignorecount, my $alignfile, my $discretelinks, my $alllinks) = @_;
-        # @{$stack{$positions[0]}}  -> seedstart seedend position orientation seedname readname
-        my @sortkeys = sort {$a <=> $b} keys %$stackref; 
-        if ($readmode == 1 && $#sortkeys > 1) {
-                my $readlength = $sortkeys[-1] - $sortkeys[0];
-                if ($readlength > $maxreadlength) { $maxreadlength = $readlength; }
-                }
-        my %newadjlist; 
-        $usedcount += scalar @sortkeys;
-        FIRST: for (my $i = 0; $i < $#sortkeys; $i++) {
-                my $firstalign = $sortkeys[$i];
-                next if (exists $blacklist{$$stackref{$firstalign}[4]});
-                if ($readmode == 2) { 
-                        my $orientation1 = $$stackref{$firstalign}[3];
-                        if ($orientation1 eq "f") { $orientation1 = "o"; } else { $orientation1 = "i"; }
-                        if (not exists $terminal{$$stackref{$firstalign}[4]}) {
-                                if (not exists $subterminal{$$stackref{$firstalign}[4].$orientation1}) {
-                                        next;
-                                        }
-                                }        
-                        }
-                my @secondlist;
-                if ($readmode != 2) { push @secondlist, $sortkeys[$i+1]; } # only the next alignment
-                elsif ($i+2 > $#sortkeys) { @secondlist = (); }
-#                else { @secondlist = @sortkeys[$i+2..$#sortkeys]; } # all next alignments, but excluding the directly adjacent
-                else { @secondlist = @sortkeys[$i+1..$#sortkeys]; } # all next alignments
-                SECOND: foreach my $secondalign (@secondlist) {
-                        next if (exists $blacklist{$$stackref{$secondalign}[4]});
-                        next if ($firstalign eq $secondalign);
-                        if ($readmode == 2) {
-                                my $orientation2 = $$stackref{$secondalign}[3];
-                                if ($orientation2 eq "f") { $orientation2 = "i"; } else { $orientation2 = "o"; }                        
-                                next if (not exists $terminal{$$stackref{$secondalign}[4]} && not exists $subterminal{$$stackref{$secondalign}[4].$orientation2}); 
-                                }
-                        my @newadj = parsePairs($firstalign,@{$$stackref{$firstalign}},$secondalign,@{$$stackref{$secondalign}}); # return: seed.or seed.or gap name from to
-#                        if ($readmode == 1 && ($newadj[2] < (-1*$lengtherror*$seedlength))) { # more or less overlapping seeds, ignore at least one
-                        if ($newadj[2] < (-1*$lengtherror*$seedlength)) { # more or less overlapping seeds, ignore at least one
-                                if (not (exists $adjacency{$newadj[0]} && exists $adjacency{$newadj[0]}{$newadj[1]})) { # never mind if the connection already exists, then it can't be really bad
-                                        next;
-                                        }
-                                } #overlapping seeds
-                        if ($readmode == 2) {
-                                my $pathdepth = 0;
-                                if (exists $subterminal{$newadj[0]}) { 
-                                        $pathdepth += $subterminal{$newadj[0]}[1]; 
-                                        $newadj[0] = $subterminal{$newadj[0]}[0]; # attach to the terminal instead of subterminal
-                                        }
-                                if (exists $subterminal{$newadj[1]}) { 
-                                        $pathdepth += $subterminal{$newadj[1]}[1]; 
-                                        $newadj[1] = $subterminal{$newadj[1]}[0]; # attach to the terminal instead of subterminal
-                                        }
-                                next if ($pathdepth > $newadj[2] + $seedlength - 1);
-                                $newadj[2] -= $pathdepth;
-                                # make sure the correct end of the terminal node is used
-                                if (exists $terminal{node($newadj[0])}) { next if ($newadj[0] ne $terminal{node($newadj[0])}); }
-                                if (exists $terminal{node($newadj[1])}) { next if ($newadj[1] ne $terminal{node($newadj[1])}); }
-                                $mode2count++;
-                                }
-                        @{$newadjlist{join(".",@newadj)}} = @newadj;
-                        } # second
-                } # first $i
-        foreach (sort keys %newadjlist) {
-                if (node($newadjlist{$_}[0]) eq node($newadjlist{$_}[1])) { 
-                        $readignorecount++;
-                        return ($usedcount,$mode2count,$readignorecount,$discretelinks,$alllinks); # possible palindromic read
-                        }
-                }
-        foreach (sort keys %newadjlist) {
-                my @newadj = @{$newadjlist{$_}};
-                next if (exists $blacklist{node($newadj[0])});
-                next if (exists $blacklist{node($newadj[1])});
-                $$seedcountref{node($newadj[0])} = 1;
-                $$seedcountref{node($newadj[1])} = 1;
-                # adjacency:        [0] direct count [1] 0 hypothetical, 1 evidence [2] minimum gap [3] mean gap (based on direct counts) [4]        maximum gap [5] sd [6] scaffold nr
-                if (exists $adjacency{$newadj[0]}) {
-                        if (exists $adjacency{$newadj[0]}{$newadj[1]}) {
-                                $alllinks++;
-                                if ($adjacency{$newadj[0]}{$newadj[1]}[0]) {
-                                        setAdjacencyField($newadj[0],$newadj[1],3,(($adjacency{$newadj[0]}{$newadj[1]}[3]*$adjacency{$newadj[0]}{$newadj[1]}[0]) + $newadj[2])/(1 + $adjacency{$newadj[0]}{$newadj[1]}[0]));
-                                        }
-                                else {
-                                        setAdjacencyField($newadj[0],$newadj[1],3,$newadj[2]);
-                                        }
-                                setAdjacencyField($newadj[0],$newadj[1],0,$adjacency{$newadj[0]}{$newadj[1]}[0] + 1);
-                                if ($adjacency{$newadj[0]}{$newadj[1]}[2] > $newadj[2]) { setAdjacencyField($newadj[0],$newadj[1],2,$newadj[2]);  }
-                                if ($adjacency{$newadj[0]}{$newadj[1]}[4] < $newadj[2]) { setAdjacencyField($newadj[0],$newadj[1],4,$newadj[2]);  }
-                                }
-                        else { # new adjacency
-                                newAdjacency($newadj[0],$newadj[1],1,1,$newadj[2],$newadj[2],$newadj[2]);
-                                $alllinks++;
-                                $discretelinks++
-                                }
-                        }
-                else { # new adjacency
-                        newAdjacency($newadj[0],$newadj[1],1,1,$newadj[2],$newadj[2],$newadj[2]);
-                        $alllinks++;
-                        $discretelinks++
-                        }
-                my @sortkeys = sort {$a cmp $b} ($newadj[0],$newadj[1]);
-                push @{$linklength{$sortkeys[0]}{$sortkeys[1]}}, $newadj[2]; # temporary storage
-                }         
-        return ($usedcount,$mode2count,$readignorecount,$discretelinks,$alllinks);
+  (my $readmode, my $seedcountref, my $stackref, my $usedcount, my $mode2count, my $readignorecount, my $alignfile, my $discretelinks, my $alllinks) = @_;
+  # @{$stack{$positions[0]}}  -> seedstart seedend position orientation seedname readname
+  my @sortkeys = sort {$a <=> $b} keys %$stackref; 
+  if ($readmode == 1 && $#sortkeys > 1) {
+    my $readlength = $sortkeys[-1] - $sortkeys[0];
+    if ($readlength > $maxreadlength) { $maxreadlength = $readlength; }
+  }
+
+  my %newadjlist; 
+  $usedcount += scalar @sortkeys;
+ FIRST: for (my $i = 0; $i < $#sortkeys; $i++) {
+    my $firstalign = $sortkeys[$i];
+    next if (exists $blacklist{$$stackref{$firstalign}[4]});
+    if ($readmode == 2) { 
+      my $orientation1 = $$stackref{$firstalign}[3];
+      if ($orientation1 eq "f") { $orientation1 = "o"; } else { $orientation1 = "i"; }
+      if (not exists $terminal{$$stackref{$firstalign}[4]}) {
+        if (not exists $subterminal{$$stackref{$firstalign}[4].$orientation1}) {
+          next;
+        }
+      }        
+    }
+
+    my @secondlist;
+    if ($readmode != 2) { push @secondlist, $sortkeys[$i+1]; } # only the next alignment
+    elsif ($i+2 > $#sortkeys) { @secondlist = (); }
+#   else { @secondlist = @sortkeys[$i+2..$#sortkeys]; } # all next alignments, but excluding the directly adjacent
+    else { @secondlist = @sortkeys[$i+1..$#sortkeys]; } # all next alignments
+  SECOND: for my $secondalign (@secondlist) {
+      next if (exists $blacklist{$$stackref{$secondalign}[4]});
+      next if ($firstalign eq $secondalign);
+      if ($readmode == 2) {
+        my $orientation2 = $$stackref{$secondalign}[3];
+        if ($orientation2 eq "f") { $orientation2 = "i"; } else { $orientation2 = "o"; }                        
+        next if (!exists $terminal{$$stackref{$secondalign}[4]} && !exists $subterminal{$$stackref{$secondalign}[4].$orientation2}); 
+      }
+      my @newadj = parsePairs($firstalign,@{$$stackref{$firstalign}},$secondalign,@{$$stackref{$secondalign}}); # return: seed.or seed.or gap name from to
+#     if ($readmode == 1 && ($newadj[2] < (-1*$lengtherror*$seedlength))) { # more or less overlapping seeds, ignore at least one
+      if ($newadj[2] < (-1*$lengtherror*$seedlength)) { # more or less overlapping seeds, ignore at least one
+        if (not (exists $adjacency{$newadj[0]} && exists $adjacency{$newadj[0]}{$newadj[1]})) { # never mind if the connection already exists, then it can't be really bad
+          next;
+        }
+      } #overlapping seeds
+
+      if ($readmode == 2) {
+        my $pathdepth = 0;
+        if (exists $subterminal{$newadj[0]}) { 
+          $pathdepth += $subterminal{$newadj[0]}[1]; 
+          $newadj[0] = $subterminal{$newadj[0]}[0]; # attach to the terminal instead of subterminal
+        }
+
+        if (exists $subterminal{$newadj[1]}) { 
+          $pathdepth += $subterminal{$newadj[1]}[1]; 
+          $newadj[1] = $subterminal{$newadj[1]}[0]; # attach to the terminal instead of subterminal
+        }
+
+        next if ($pathdepth > $newadj[2] + $seedlength - 1);
+        $newadj[2] -= $pathdepth;
+        # make sure the correct end of the terminal node is used
+        if (exists $terminal{node($newadj[0])}) { next if ($newadj[0] ne $terminal{node($newadj[0])}); }
+        if (exists $terminal{node($newadj[1])}) { next if ($newadj[1] ne $terminal{node($newadj[1])}); }
+        $mode2count++;
+      }
+      @{$newadjlist{join(".",@newadj)}} = @newadj;
+    } # second
+  } # first $i
+
+  for (sort keys %newadjlist) {
+    if (node($newadjlist{$_}[0]) eq node($newadjlist{$_}[1])) { 
+      $readignorecount++;
+      return ($usedcount,$mode2count,$readignorecount,$discretelinks,$alllinks); # possible palindromic read
+    }
+  }
+
+  for (sort keys %newadjlist) {
+    my @newadj = @{$newadjlist{$_}};
+    next if (exists $blacklist{node($newadj[0])});
+    next if (exists $blacklist{node($newadj[1])});
+    $$seedcountref{node($newadj[0])} = 1;
+    $$seedcountref{node($newadj[1])} = 1;
+    # adjacency:        [0] direct count [1] 0 hypothetical, 1 evidence [2] minimum gap [3] mean gap (based on direct counts) [4]        maximum gap [5] sd [6] scaffold nr
+    if (exists $adjacency{$newadj[0]}) {
+      if (exists $adjacency{$newadj[0]}{$newadj[1]}) {
+        $alllinks++;
+        if ($adjacency{$newadj[0]}{$newadj[1]}[0]) {
+          setAdjacencyField($newadj[0],$newadj[1],3,(($adjacency{$newadj[0]}{$newadj[1]}[3]*$adjacency{$newadj[0]}{$newadj[1]}[0]) + $newadj[2])/(1 + $adjacency{$newadj[0]}{$newadj[1]}[0]));
+
+        } else {
+          setAdjacencyField($newadj[0],$newadj[1],3,$newadj[2]);
+        }
+
+        setAdjacencyField($newadj[0],$newadj[1],0,$adjacency{$newadj[0]}{$newadj[1]}[0] + 1);
+        if ($adjacency{$newadj[0]}{$newadj[1]}[2] > $newadj[2]) { setAdjacencyField($newadj[0],$newadj[1],2,$newadj[2]);  }
+        if ($adjacency{$newadj[0]}{$newadj[1]}[4] < $newadj[2]) { setAdjacencyField($newadj[0],$newadj[1],4,$newadj[2]);  }
+
+      } else { # new adjacency
+        newAdjacency($newadj[0],$newadj[1],1,1,$newadj[2],$newadj[2],$newadj[2]);
+        $alllinks++;
+        $discretelinks++
+      }
+
+    } else { # new adjacency
+      newAdjacency($newadj[0],$newadj[1],1,1,$newadj[2],$newadj[2],$newadj[2]);
+      $alllinks++;
+      $discretelinks++
+    }
+
+    my @sortkeys = sort {$a cmp $b} ($newadj[0],$newadj[1]);
+    push @{$linklength{$sortkeys[0]}{$sortkeys[1]}}, $newadj[2]; # temporary storage
+  }         
+
+  return ($usedcount,$mode2count,$readignorecount,$discretelinks,$alllinks);
 }
 
 sub parsePairs {
-        #my @newadj = parsePairs($firstalign,@{$stack{$firstalign}},$secondalign,@{$stack{$secondalign}}); # return: seed.or seed.or gap readname from to 
-        # 1seedstart 2seedend 3position 4orientation 5seedname 6readname
-        # 8seedstart 9seedend 10position 11orientation 12seedname 13readname
-        my @returnval;
-        if ($_[4] eq "f") {
-                if ($_[11] eq "f") { #ff
-                        @returnval = ($_[5]."o",$_[12]."i");
-                        }
-                else { # fr
-                        @returnval = ($_[5]."o",$_[12]."o");
-                        }
-                }
-        elsif ($_[11] eq "f") { # rf
-                @returnval = ($_[5]."i",$_[12]."i");        
-                }
-        else { # rr
-                @returnval = ($_[5]."i",$_[12]."o");
-                }
-        push @returnval, $_[7] - $_[3] -1;        # gap
-        push @returnval, ($_[6],$_[3] + 1,$_[7] -1);        # readname from to
-        return (@returnval);        
+  #my @newadj = parsePairs($firstalign,@{$stack{$firstalign}},$secondalign,@{$stack{$secondalign}}); # return: seed.or seed.or gap readname from to 
+  # 1seedstart 2seedend 3position 4orientation 5seedname 6readname
+  # 8seedstart 9seedend 10position 11orientation 12seedname 13readname
+  my @returnval;
+
+  if ($_[4] eq "f") {
+    if ($_[11] eq "f") { #ff
+      @returnval = ($_[5]."o",$_[12]."i");
+
+    } else { # fr
+      @returnval = ($_[5]."o",$_[12]."o");
+    }
+
+  } elsif ($_[11] eq "f") { # rf
+    @returnval = ($_[5]."i",$_[12]."i");        
+
+  } else { # rr
+    @returnval = ($_[5]."i",$_[12]."o");
+  }
+
+  push @returnval, $_[7] - $_[3] -1;        # gap
+  push @returnval, ($_[6],$_[3] + 1,$_[7] -1);        # readname from to
+
+  return @returnval;
 }
 
 
@@ -1139,12 +1152,12 @@ sub collapseScaffoldLinks {
         my $dellist = 0;
         my @anb = sort {$scafadjacency{$anode1}{$a}[3] <=> $scafadjacency{$anode1}{$b}[3]} (keys %{$scafadjacency{$anode1}}); # shortest links first
         my $anode = node($anode1);
-        BNODE: foreach my $bnode1 (@anb) {
+        BNODE: for my $bnode1 (@anb) {
                 next if ($bnode1 eq "0i");
                 my $bnode2 = opposite($bnode1);
                 my $bnode = node($bnode1);
                 next if ($anode == $bnode);
-                CNODE: foreach my $cnode1 (@anb) { # shortest first
+                CNODE: for my $cnode1 (@anb) { # shortest first
                         my $cnode = node($cnode1);
                         next if ($cnode == $bnode);
                         next if ($cnode == $anode);
@@ -1161,7 +1174,7 @@ sub collapseScaffoldLinks {
                                                 } # unambiguously connected
                                         elsif ($bmultiple[0] <= 5 && $bmultiple[1] <= 5) {         # not unambiguous, but if we find some additional evidence to place B we'll delete A-C anyway.
                                                 my @comnb = commonNeighboursS($bnode2,$cnode2); # A-B-C-X
-                                                foreach (@comnb) {
+                                                for (@comnb) {
                                                         if (fitsBetweenS($bnode2,$cnode1,$_)) {
                                                                 setAdjacencyFieldS($_,$bnode2,1,5);
                                                                 setAdjacencyFieldS($anode1,$cnode1,1,6);
@@ -1173,7 +1186,7 @@ sub collapseScaffoldLinks {
                                                                 }
                                                         }
                                                 @comnb = commonNeighboursS($anode2,$bnode1); # X-A-B-C
-                                                foreach (@comnb) {
+                                                for (@comnb) {
                                                         if (fitsBetweenS($_,$anode2,$bnode1)) {
                                                                 setAdjacencyFieldS($bnode1,$_,1,8);
                                                                 setAdjacencyFieldS($anode1,$cnode1,1,9);
@@ -1185,7 +1198,7 @@ sub collapseScaffoldLinks {
                                                                 }
                                                         }
                                                 @comnb = commonNeighboursBetweenS($anode1,$bnode1); # returns X in orientation opposite $bnode1 (therefore $cnode1)
-                                                foreach (@comnb) { # A-X-B-C
+                                                for (@comnb) { # A-X-B-C
                                                         if (fitsBetweenS($anode1,opposite($_),$bnode1)) {
                                                                 setAdjacencyFieldS($anode1,$bnode1,1,11);
                                                                 setAdjacencyFieldS($anode1,$cnode1,1,12);
@@ -1197,7 +1210,7 @@ sub collapseScaffoldLinks {
                                                                 }
                                                         }
                                                 @comnb = commonNeighboursBetweenS($cnode1,$bnode2); # returns X in orientation opposite $bnode2 (therefore $anode1)
-                                                foreach (@comnb) { # A-B-X-C
+                                                for (@comnb) { # A-B-X-C
                                                         if (fitsBetweenS($bnode2,$_,$cnode1)) {
                                                                 setAdjacencyFieldS($cnode1,$bnode2,1,14);
                                                                 setAdjacencyFieldS($anode1,$cnode1,1,15);
@@ -1209,7 +1222,7 @@ sub collapseScaffoldLinks {
                                                                 }
                                                         }
                                                 @comnb = commonNeighboursS($anode1,$bnode2); # A-B-C...X        
-                                                foreach (@comnb) {
+                                                for (@comnb) {
                                                         next if ($_ eq $cnode1);
                                                         if (possibleFitS($bnode2,$cnode1,$_)) {
                                                                 setAdjacencyFieldS($anode1,$cnode1,1,17);
@@ -1219,7 +1232,7 @@ sub collapseScaffoldLinks {
                                                                 }
                                                         }
                                                 @comnb = commonNeighboursS($cnode1,$bnode1); # X...A-B-C
-                                                foreach (@comnb) {
+                                                for (@comnb) {
                                                         next if ($_ eq $anode1);
                                                         if (possibleFitS($bnode1,$anode1,$_)) {
                                                                 setAdjacencyFieldS($anode1,$cnode1,1,18);
@@ -1235,10 +1248,10 @@ sub collapseScaffoldLinks {
                                                 my @xnodes = sort keys %{$scafadjacency{$bnode2}};
                                                 my @ynodes; if (exists $scafadjacency{$cnode2}) { @ynodes = sort keys %{$scafadjacency{$cnode2}}; }
                                                 my @znodes = sort keys %{$scafadjacency{$cnode1}};
-                                                foreach my $xnode1 (@xnodes) {
+                                                for my $xnode1 (@xnodes) {
                                                         my $xnode2 = opposite($xnode1);
                                                         if (exists $scafadjacency{$xnode2}) {
-                                                                foreach my $znode2 (@znodes) {
+                                                                for my $znode2 (@znodes) {
                                                                         my $znode1 = opposite($znode2);
                                                                         if (exists $scafadjacency{$znode1}) {
                                                                                 if (exists $scafadjacency{$xnode2}{$znode1}) { # B-X-Z-C confirmed, therefore A-B-C somewhat -> delete A-C
@@ -1249,7 +1262,7 @@ sub collapseScaffoldLinks {
                                                                                 }
                                                                         }
                                                                 }
-                                                        foreach my $ynode1 (@ynodes) {
+                                                        for my $ynode1 (@ynodes) {
                                                                 my $ynode2 = opposite($ynode1);
                                                                 if (exists $scafadjacency{$ynode2}) {
                                                                         if (exists $scafadjacency{$xnode1}{$ynode2}) { # B-C-Y-X / B-X confirmed, therefore A-B-C somewhat -> delete A-C
@@ -1271,10 +1284,10 @@ sub collapseScaffoldLinks {
                                                 @xnodes = sort keys %{$scafadjacency{$bnode1}};
                                                 if (exists $scafadjacency{$anode2}) { @ynodes = sort keys %{$scafadjacency{$anode2}}; } else { @ynodes = (); }
                                                 @znodes = sort keys %{$scafadjacency{$anode1}};
-                                                foreach my $xnode1 (@xnodes) {
+                                                for my $xnode1 (@xnodes) {
                                                         my $xnode2 = opposite($xnode1);
                                                         if (exists $scafadjacency{$xnode2}) {
-                                                                foreach my $znode2 (@znodes) {
+                                                                for my $znode2 (@znodes) {
                                                                         my $znode1 = opposite($znode2);
                                                                         if (exists $scafadjacency{$znode1}) {
                                                                                 if (exists $scafadjacency{$xnode2}{$znode1}) { 
@@ -1285,7 +1298,7 @@ sub collapseScaffoldLinks {
                                                                                 }
                                                                         }
                                                                 }
-                                                        foreach my $ynode1 (@ynodes) {
+                                                        for my $ynode1 (@ynodes) {
                                                                 my $ynode2 = opposite($ynode1);
                                                                 my $xnode2 = opposite($xnode1);
                                                                 if (exists $adjacency{$ynode2}) {
@@ -1317,12 +1330,12 @@ sub collapseLinks {
         my $dellist = 0;
         my @anb = sort {$adjacency{$anode1}{$a}[3] <=> $adjacency{$anode1}{$b}[3]} (keys %{$adjacency{$anode1}}); # shortest links first
         my $anode = node($anode1);
-        BNODE: foreach my $bnode1 (@anb) {
+        BNODE: for my $bnode1 (@anb) {
                 next if ($bnode1 eq "0i");
                 my $bnode2 = opposite($bnode1);
                 my $bnode = node($bnode1);
                 next if ($anode == $bnode);
-                CNODE: foreach my $cnode1 (@anb) { # shortest first
+                CNODE: for my $cnode1 (@anb) { # shortest first
                         my $cnode = node($cnode1);
                         next if ($cnode == $bnode);
                         next if ($cnode == $anode);
@@ -1346,7 +1359,7 @@ sub collapseLinks {
                                                 } # unambiguously connected
                                         elsif ($bmultiple[0] <= 5 && $bmultiple[1] <= 5) {         # not unambiguous, but if we find some additional evidence to place B we'll delete A-C anyway.
                                                 my @comnb = commonNeighbours($bnode2,$cnode2); # A-B-C-X
-                                                foreach (@comnb) {
+                                                for (@comnb) {
                                                         if (fitsBetween($bnode2,$cnode1,$_)) {
                                                                 setAdjacencyField($_,$bnode2,1,5);
                                                                 setAdjacencyField($anode1,$cnode1,1,6);
@@ -1358,7 +1371,7 @@ sub collapseLinks {
                                                                 }
                                                         }
                                                 @comnb = commonNeighbours($anode2,$bnode1); # X-A-B-C
-                                                foreach (@comnb) {
+                                                for (@comnb) {
                                                         if (fitsBetween($_,$anode2,$bnode1)) {
                                                                 setAdjacencyField($bnode1,$_,1,8);
                                                                 setAdjacencyField($anode1,$cnode1,1,9);
@@ -1370,7 +1383,7 @@ sub collapseLinks {
                                                                 }
                                                         }
                                                 @comnb = commonNeighboursBetween($anode1,$bnode1); # returns X in orientation opposite $bnode1 (therefore $cnode1)
-                                                foreach (@comnb) { # A-X-B-C
+                                                for (@comnb) { # A-X-B-C
                                                         if (fitsBetween($anode1,opposite($_),$bnode1)) {
                                                                 setAdjacencyField($anode1,$bnode1,1,11);
                                                                 setAdjacencyField($anode1,$cnode1,1,12);
@@ -1382,7 +1395,7 @@ sub collapseLinks {
                                                                 }
                                                         }
                                                 @comnb = commonNeighboursBetween($cnode1,$bnode2); # returns X in orientation opposite $bnode2 (therefore $anode1)
-                                                foreach (@comnb) { # A-B-X-C
+                                                for (@comnb) { # A-B-X-C
                                                         if (fitsBetween($bnode2,$_,$cnode1)) {
                                                                 setAdjacencyField($cnode1,$bnode2,1,14);
                                                                 setAdjacencyField($anode1,$cnode1,1,15);
@@ -1394,7 +1407,7 @@ sub collapseLinks {
                                                                 }
                                                         }
                                                 @comnb = commonNeighbours($anode1,$bnode2); # A-B-C...X        
-                                                foreach (@comnb) {
+                                                for (@comnb) {
                                                         next if ($_ eq $cnode1);
                                                         if (possibleFit($bnode2,$cnode1,$_)) {
                                                                 setAdjacencyField($anode1,$cnode1,1,17);
@@ -1404,7 +1417,7 @@ sub collapseLinks {
                                                                 }
                                                         }
                                                 @comnb = commonNeighbours($cnode1,$bnode1); # X...A-B-C
-                                                foreach (@comnb) {
+                                                for (@comnb) {
                                                         next if ($_ eq $anode1);
                                                         if (possibleFit($bnode1,$anode1,$_)) {
                                                                 setAdjacencyField($anode1,$cnode1,1,18);
@@ -1420,10 +1433,10 @@ sub collapseLinks {
                                                 my @xnodes = sort keys %{$adjacency{$bnode2}};
                                                 my @ynodes; if (exists $adjacency{$cnode2}) { @ynodes = sort keys %{$adjacency{$cnode2}}; }
                                                 my @znodes = sort keys %{$adjacency{$cnode1}};
-                                                foreach my $xnode1 (@xnodes) {
+                                                for my $xnode1 (@xnodes) {
                                                         my $xnode2 = opposite($xnode1);
                                                         if (exists $adjacency{$xnode2}) {
-                                                                foreach my $znode2 (@znodes) {
+                                                                for my $znode2 (@znodes) {
                                                                         my $znode1 = opposite($znode2);
                                                                         if (exists $adjacency{$znode1}) {
                                                                                 if (exists $adjacency{$xnode2}{$znode1}) { # B-X-Z-C confirmed, therefore A-B-C somewhat -> delete A-C
@@ -1434,7 +1447,7 @@ sub collapseLinks {
                                                                                 }
                                                                         }
                                                                 }
-                                                        foreach my $ynode1 (@ynodes) {
+                                                        for my $ynode1 (@ynodes) {
                                                                 my $ynode2 = opposite($ynode1);
                                                                 if (exists $adjacency{$ynode2}) {
                                                                         if (exists $adjacency{$xnode1}{$ynode2}) { # B-C-Y-X / B-X confirmed, therefore A-B-C somewhat -> delete A-C
@@ -1456,10 +1469,10 @@ sub collapseLinks {
                                                 @xnodes = sort keys %{$adjacency{$bnode1}};
                                                 if (exists $adjacency{$anode2}) { @ynodes = sort keys %{$adjacency{$anode2}}; } else { @ynodes = (); }
                                                 @znodes = sort keys %{$adjacency{$anode1}};
-                                                foreach my $xnode1 (@xnodes) {
+                                                for my $xnode1 (@xnodes) {
                                                         my $xnode2 = opposite($xnode1);
                                                         if (exists $adjacency{$xnode2}) {
-                                                                foreach my $znode2 (@znodes) {
+                                                                for my $znode2 (@znodes) {
                                                                         my $znode1 = opposite($znode2);
                                                                         if (exists $adjacency{$znode1}) {
                                                                                 if (exists $adjacency{$xnode2}{$znode1}) { 
@@ -1470,7 +1483,7 @@ sub collapseLinks {
                                                                                 }
                                                                         }
                                                                 }
-                                                        foreach my $ynode1 (@ynodes) {
+                                                        for my $ynode1 (@ynodes) {
                                                                 my $ynode2 = opposite($ynode1);
                                                                 my $xnode2 = opposite($xnode1);
                                                                 if (exists $adjacency{$ynode2}) {
@@ -1501,10 +1514,10 @@ sub removeCollapsedLinks {
         my $savemode = $_[0]; # 0 save nothing; 1 store removed links in %salvagedadjacency
         my @fkeys = keys %adjacency;
         my $collapsecount = 0;
-        foreach my $fnode (@fkeys) {
+        for my $fnode (@fkeys) {
                 next if (not exists $adjacency{$fnode});
                 my @skeys = keys %{$adjacency{$fnode}};
-                foreach my $snode (@skeys) {
+                for my $snode (@skeys) {
                         if (exists $adjacency{$fnode} && exists $adjacency{$fnode}{$snode}) {
                                 if ($adjacency{$fnode}{$snode}[1] >= 2) {
                                         my $tmp = $adjacency{$fnode}{$snode}[1];
@@ -1527,10 +1540,10 @@ sub trimNode {
         (my $anode1, my $anode2, my $a1con, my $a2con, my $trimmode) = @_;
         my @anb = sort keys %{$adjacency{$anode1}};
         my $trimcount = 0;
-        BNODE: foreach my $bnode1 (@anb) {
+        BNODE: for my $bnode1 (@anb) {
                 next if ($bnode1 eq "0i");
                 my $bnode2 = opposite($bnode1);
-                foreach my $cnode1 (@anb) { 
+                for my $cnode1 (@anb) { 
                         next if ($cnode1 eq $bnode1);
                         my $cnode2 = opposite($cnode1);                
                         if (exists $adjacency{$cnode2}) {
@@ -1566,7 +1579,7 @@ sub trimNode {
                 if ($a1con > 1) {
                         if ($a2con == 0) {
                                 if (not exists $adjacency{$anode1}{"0i"}) {
-                                        foreach (@anb) {
+                                        for (@anb) {
                                                 deleteLink($anode1,$_);
                                                 }
                                         $trimcount++;
@@ -1755,7 +1768,7 @@ sub linearizeNode {
                                                                 $connectioncount++;
                                                                 if ($bnode1 ne "0i") {
                                                                         push @returnstack, ($bnode1, $bnode2);
-                                                                        foreach (@x2paths, @b2paths) {
+                                                                        for (@x2paths, @b2paths) {
                                                                                 my @bx2 = split /\,/,$_;
                                                                                 if ($bx2[7] ne "middle") { # the last node out from b2 or x2 needs resolution, maybe that is easier now that A-B is gone
                                                                                         push @returnstack, ($bx2[-1], $bx2[-2]);
@@ -1782,20 +1795,20 @@ sub collapseLoop {
         my %deleteloopstack; # direct connection between start and end
         my @pathstartnodes;
         my %loopendnodes;
-        foreach my $bnode1 (keys %{$adjacency{$anode1}}) {
+        for my $bnode1 (keys %{$adjacency{$anode1}}) {
                 next if (node($bnode1) == node($anode1));
                 if (connectionCount($bnode1) >= 2) { $loopendnodes{$bnode1} = 1; }
                 if (connectionCount(opposite($bnode1))) { push @pathstartnodes, opposite($bnode1); }
                 }
-        foreach my $pathstart (@pathstartnodes) {
+        for my $pathstart (@pathstartnodes) {
                 next if (exists $loopendnodes{opposite($pathstart)});
                 my @newpaths = followPath($pathstart,$maxbranching,$maxpathlength,"hub");
-                foreach (@newpaths) { 
+                for (@newpaths) { 
                         my @pathelements = split /\,/,$_;                                
                         if (exists $loopendnodes{$pathelements[-2]}) { $deleteloopstack{$pathelements[-2]} = 1; }
                         }
                 }
-        foreach (keys %deleteloopstack) {
+        for (keys %deleteloopstack) {
                 $bubblecount++;
                 deleteLink($anode1,$_);
                 }
@@ -1810,18 +1823,18 @@ sub collapseBubble {
         # Alternatively ($diploid mode), clip off a path with no additional connections
         my @newpaths = followPath($anode1,$branching,$plen,"hub");
         my %endindexedpaths;
-        foreach (@newpaths) { 
+        for (@newpaths) { 
                 my @pathelements = split /\,/,$_;
                 next if ($pathelements[-1] eq $anode1); # initial fork reported back
                 push @{$endindexedpaths{$pathelements[-1]}}, $_;
                 }
-        foreach (sort keys %endindexedpaths) {
+        for (sort keys %endindexedpaths) {
                 next if (scalar @{$endindexedpaths{$_}} < 2);
                 my @pathstack = sort { length($a) <=> length($b) } @{$endindexedpaths{$_}}; # shortest first
                 while (@pathstack) {
                         my $path1 = shift @pathstack;
                         my @pathelements1 = split /\,/,$path1;
-                        foreach my $path2 (@pathstack) {
+                        for my $path2 (@pathstack) {
                                 next if ($path1 eq $path2);  
                                 my @pathelements2 = split /\,/,$path2; #
                                 next if ($pathelements1[-1] ne $pathelements2[-1]); # endpoints not equal [should not happen]
@@ -1840,7 +1853,7 @@ sub collapseBubble {
                                 my $whathappened = treatBubblePaths(\@pathelements1,\@pathelements2,$trymode,$diploidpreserve);
                                 if ($whathappened) {
                                         my @returnstack;
-                                        foreach (keys %endindexedpaths) {
+                                        for (keys %endindexedpaths) {
                                                 push @returnstack, ($_, opposite($_));
                                                 }
                                         #push @returnstack, ($pathelements1[-1], $pathelements1[-2]);
@@ -1932,10 +1945,10 @@ sub deleteRepeatNode {
         my @anb1; my @anb2;
         if ($a1con) { @anb1 = sort keys %{$adjacency{$anode1}}; }
         if ($a2con) { @anb2 = sort keys %{$adjacency{$anode2}}; }
-        foreach (@anb1) {
+        for (@anb1) {
                 deleteLink($_,$anode1);
                 }
-        foreach (@anb2) {
+        for (@anb2) {
                 deleteLink($_,$anode2);
                 }
         $blacklist{node($anode1)}++;
@@ -2048,7 +2061,7 @@ sub followPath {
                 my @currentpath = @{$workingpaths{$currentpathindex}}; 
                 if (exists $adjacency{$currentpath[-1]} && $currentpath[6] < $maxsteps && ($currentpath[3] + $currentpath[4]) <= $complexity) {
                         my @nextnodes = sort keys %{$adjacency{$currentpath[-1]}};
-                        foreach my $nnode (@nextnodes) {
+                        for my $nnode (@nextnodes) {
                                 next if ($nnode eq "0i");
                                 my @newpath = @currentpath;
                                 $pathcounter++;
@@ -2083,11 +2096,11 @@ sub followPath {
                                 $newpath[7] = $verdict;
                                 push @workingpathindex, $pathcounter;        
                                 @{$workingpaths{$pathcounter}} = @newpath;
-                                } # foreach @nextnodes
+                                } # for @nextnodes
                         } # add nextnodes
                 } # workingpathindex
         my @returnarray;
-        foreach (sort keys %returnpaths) {
+        for (sort keys %returnpaths) {
                 push @returnarray, join(",",@{$workingpaths{$_}});
                 }
         return (@returnarray);        
@@ -2115,7 +2128,7 @@ sub commonNeighbours {
         if (not exists $adjacency{$_[1]}) { return (); }
         my @returnarray;
         if (node($_[0]) eq node($_[1])) { return (); }
-        foreach (sort keys %{$adjacency{$_[0]}}) {
+        for (sort keys %{$adjacency{$_[0]}}) {
                 next if ($_ eq "0i");
                 next if (node($_) eq node($_[0]));
                 next if (node($_) eq node($_[1]));
@@ -2132,7 +2145,7 @@ sub commonNeighboursS {
         if (not exists $scafadjacency{$_[1]}) { return (); }
         my @returnarray;
         if (node($_[0]) eq node($_[1])) { return (); }
-        foreach (sort keys %{$scafadjacency{$_[0]}}) {
+        for (sort keys %{$scafadjacency{$_[0]}}) {
                 next if ($_ eq "0i");
                 next if (node($_) eq node($_[0]));
                 next if (node($_) eq node($_[1]));
@@ -2150,7 +2163,7 @@ sub commonNeighboursBetween {
         if (not exists $adjacency{$_[1]}) { return (); }
         if (node($_[0]) eq node($_[1])) { return (); }
         my @returnarray;
-        foreach (sort keys %{$adjacency{$_[0]}}) {
+        for (sort keys %{$adjacency{$_[0]}}) {
                 if (exists $adjacency{$_[1]}{opposite($_)}) {
                 next if ($_ eq "0i");
                         next if (node($_) eq node($_[0]));
@@ -2168,7 +2181,7 @@ sub commonNeighboursBetweenS {
         if (not exists $scafadjacency{$_[1]}) { return (); }
         if (node($_[0]) eq node($_[1])) { return (); }
         my @returnarray;
-        foreach (sort keys %{$scafadjacency{$_[0]}}) {
+        for (sort keys %{$scafadjacency{$_[0]}}) {
                 if (exists $scafadjacency{$_[1]}{opposite($_)}) {
                 next if ($_ eq "0i");
                         next if (node($_) eq node($_[0]));
@@ -2239,73 +2252,79 @@ sub deleteLink {
 }
 
 sub deleteNode {
-        my $returnval = 0;
-        if (exists $adjacency{$_[0]."i"}) {
-                $returnval = 1;
-                foreach (keys %{$adjacency{$_[0]."i"}}) {
-                        deleteLink($_,$_[0]."i");
-                        }
-                }
-        if (exists $adjacency{$_[0]."o"}) {
-                $returnval = 1;
-                foreach (keys %{$adjacency{$_[0]."o"}}) {
-                        deleteLink($_,$_[0]."o");
-                        }
-                }
-        return ($returnval);
+  my $returnval = 0;
+
+  if (exists $adjacency{$_[0]."i"}) {
+    $returnval = 1;
+    for (keys %{$adjacency{$_[0]."i"}}) {
+      deleteLink($_, $_[0]."i");
+    }
+  }
+
+  if (exists $adjacency{$_[0]."o"}) {
+    $returnval = 1;
+    for (keys %{$adjacency{$_[0]."o"}}) {
+      deleteLink($_, $_[0]."o");
+    }
+  }
+
+  return $returnval;
 }
 
 sub setAdjacencyField {
-        $adjacency{$_[0]}{$_[1]}[$_[2]] = $_[3];
-        $adjacency{$_[1]}{$_[0]}[$_[2]] = $_[3];
-        return();
+  $adjacency{$_[0]}{$_[1]}[$_[2]] = $_[3];
+  $adjacency{$_[1]}{$_[0]}[$_[2]] = $_[3];
+  return;
 }
 
 sub setAdjacencyFieldS {
-        $scafadjacency{$_[0]}{$_[1]}[$_[2]] = $_[3];
-        $scafadjacency{$_[1]}{$_[0]}[$_[2]] = $_[3];
-        my @sc0 = nodeOrientation($_[0]);
-        my @sc1 = nodeOrientation($_[1]);
-        my $nodeor0; my $nodeor1;
-        if ($sc0[1] eq "i") { $nodeor0 = $scaffold{$sc0[0]}[1]; } else { $nodeor0 = $scaffold{$sc0[0]}[-1]; }
-        if ($sc1[1] eq "i") { $nodeor1 = $scaffold{$sc1[0]}[1]; } else { $nodeor1 = $scaffold{$sc1[0]}[-1]; }
-        $adjacency{$nodeor0}{$nodeor1}[$_[2]] = $_[3];
-        $adjacency{$nodeor1}{$nodeor0}[$_[2]] = $_[3];
-        return();
+  $scafadjacency{$_[0]}{$_[1]}[$_[2]] = $_[3];
+  $scafadjacency{$_[1]}{$_[0]}[$_[2]] = $_[3];
+  my @sc0 = nodeOrientation($_[0]);
+  my @sc1 = nodeOrientation($_[1]);
+  my $nodeor0; my $nodeor1;
+  if ($sc0[1] eq "i") { $nodeor0 = $scaffold{$sc0[0]}[1]; } else { $nodeor0 = $scaffold{$sc0[0]}[-1]; }
+  if ($sc1[1] eq "i") { $nodeor1 = $scaffold{$sc1[0]}[1]; } else { $nodeor1 = $scaffold{$sc1[0]}[-1]; }
+  $adjacency{$nodeor0}{$nodeor1}[$_[2]] = $_[3];
+  $adjacency{$nodeor1}{$nodeor0}[$_[2]] = $_[3];
+  return;
 }
 
 sub newAdjacency {
-        push @{$adjacency{$_[0]}{$_[1]}}, @_[2..6];
-        push @{$adjacency{$_[1]}{$_[0]}}, @_[2..6];
-        return();
+  push @{$adjacency{$_[0]}{$_[1]}}, @_[2..6];
+  push @{$adjacency{$_[1]}{$_[0]}}, @_[2..6];
+  return();
 }
 
 sub existsAdjacency {
-        if (exists $adjacency{$_[0]}) { return (1); }
-        return (0);
+  if (exists $adjacency{$_[0]}) { return (1); }
+  return (0);
 }
 
 sub existsLink {
-        if (exists $adjacency{$_[0]}) {
-                if (exists $adjacency{$_[0]}{$_[1]}) {
-                        return (1);
-                        }
-                }
-        return (0);
+  if (exists $adjacency{$_[0]}) {
+    if (exists $adjacency{$_[0]}{$_[1]}) {
+      return 1;
+    }
+  }
+
+  return 0;
 }
 
 sub connectionCount {
-        if (exists $adjacency{$_[0]}) {
-                return (scalar keys %{$adjacency{$_[0]}});
-                }
-        return (0);
+  if (exists $adjacency{$_[0]}) {
+    return scalar keys %{$adjacency{$_[0]}};
+  }
+
+  return 0;
 }
 
 sub connectionCountS {
-        if (exists $scafadjacency{$_[0]}) {
-                return (scalar keys %{$scafadjacency{$_[0]}});
-                }
-        return (0);
+  if (exists $scafadjacency{$_[0]}) {
+    return (scalar keys %{$scafadjacency{$_[0]}});
+  }
+
+  return (0);
 }
 
 sub opposite {
@@ -2351,10 +2370,11 @@ sub blasr2Coords {
   my @mummercoords = ($_[9],$_[10],0,0,$_[10] - $_[9] + 1,$_[6] - $_[5] + 1,$_[3]/100,$_[1],$_[0]);
   if ($_[8]) { # rev
     ($mummercoords[2],$mummercoords[3]) = ($_[6],$_[5]);
-  }
-  else {
+
+  } else {
     ($mummercoords[2],$mummercoords[3]) = ($_[5],$_[6]);
   }
+
   return @mummercoords;
 }
 
@@ -2366,10 +2386,9 @@ sub daligner2Coords {
   if (lc($3) eq "n") { 
     return ($6+1,$7,$4+1,$5,$7-$6,$5-$4,1 - ($8/($5-$4)),$2,$1);
   }
-  else {
-    return ($7,$6+1,$5,$4+1,$6-$7,$5-$4,1 - ($8/($5-$4)),$2,$1);
-    #return ($6+1,$7,$5,$4+1,$7-$6,$5-$4,1-($8/($5-$4)),$2,$1);
-  }
+
+  return ($7,$6+1,$5,$4+1,$6-$7,$5-$4,1 - ($8/($5-$4)),$2,$1);
+  #return ($6+1,$7,$5,$4+1,$7-$6,$5-$4,1-($8/($5-$4)),$2,$1);
 }
 
 __END__

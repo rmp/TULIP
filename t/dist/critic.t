@@ -23,7 +23,7 @@ if($EVAL_ERROR) {
 
 } else {
   Test::Perl::Critic->import(
-			     -severity => 5,
+			     -severity => 4,
 			     -exclude  => [qw(CodeLayout::RequireTidyCode
 					      NamingConventions::Capitalization
 					      PodSpelling)],
