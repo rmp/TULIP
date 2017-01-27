@@ -17,6 +17,9 @@ manifest: setup
 	rm MANIFEST
 	./Build manifest
 
+clean: setup
+	./Build clean
+
 versions:
 	find lib bin t -type f -exec perl -i -pe 's/VERSION\s+=\s+q[[\d.]+]/VERSION = q[$(MAJOR).$(MINOR).$(SUB)]/g' {} \;
 

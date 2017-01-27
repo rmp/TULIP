@@ -118,7 +118,6 @@ printLog(q[Run ended]);
 writeLog();
 exit;
 
-
 #### DEBUG
 sub writeGraph { # 0 ignore;
   my @args = @_;
@@ -132,8 +131,8 @@ sub writeGraph { # 0 ignore;
 
   for my $k1 (sort keys %{$adjacency}) {
     for my $k2 (sort keys %{$$adjacency{$k1}}) {
-      $k1 =~ /^(.+)([io])$/smx; my @kk1 = ($1, $2);
-      $k2 =~ /^(.+)([io])$/smx; my @kk2 = ($1, $2);
+      my @kk1 = $k1 =~ /^(.+)([io])$/smx;
+      my @kk2 = $k2 =~ /^(.+)([io])$/smx;
       next if ($kk2[0] lt $kk1[0]);
       print $io "$kk1[0]\t$kk1[1]$kk2[1]\t$kk2[0]\t", (join "\t", @{$$adjacency{$k1}{$k2}}), "\n";
     }
@@ -142,7 +141,6 @@ sub writeGraph { # 0 ignore;
   $io->close;
   return;
 }
-
 
 #### IO SUBROUTINES
 sub printHelp {
@@ -221,14 +219,15 @@ sub readLayout {
   my $graphin = sprintf q[%s.graph_tmp], $infile;
   printLog("Retrieving graph from $graphin");
   $adjacency = retrieve($graphin) or croak "Could not read $graphin\n";
-  #
+
   my $scin = sprintf q[%s.scaffolds_tmp], $infile;
   printLog("Retrieving scaffolds from $scin");
   $scaffold = retrieve($scin) or croak "Could not read $scin\n";
-  #
+
   my $seedin = sprintf q[%s.seeds_tmp], $infile;
   printLog("Retrieving scaffold seeds from $seedin");
   $seeduse = retrieve($seedin) or croak "Could not read $seedin\n";
+
   return();
 }
 
@@ -252,7 +251,7 @@ sub graphStats { # note: modified to use a reference to %adjacency
     }
   }
 
-  printLog(scalar keys %seeds, q[ seeds in the graph]);
+  printLog(sprintf q[%d seeds in the graph], scalar keys %seeds);
   return ();
 }
 
@@ -802,28 +801,29 @@ sub extrapolateSeed {
 }
 
 sub parsePairs {
+  my ($one, $two, $three, $four, $five, $six, $seven, $eight, $nine, $ten, $eleven, $twelve) = @_; # todo: use meaningful names
   #my @newadj = parsePairs($firstalign,@{$stack{$firstalign}},$secondalign,@{$stack{$secondalign}}); # return: seed.or seed.or gap readname from to 
   # 1seedstart 2seedend 3position 4orientation 5seedname 6readname
   # 8seedstart 9seedend 10position 11orientation 12seedname 13readname
   my @returnval;
 
-  if ($_[4] eq 'f') {
-    if ($_[11] eq 'f') { #ff
-      @returnval = ($_[5].'o',$_[12].'i');
+  if ($four eq 'f') {
+    if ($eleven eq 'f') { #ff
+      push @returnval, "${five}o", "${twelve}i";
 
     } else { # fr
-      @returnval = ($_[5].'o',$_[12].'o');
+      push @returnval, "${five}o", "${twelve}o";
     }
 
-  } elsif ($_[11] eq 'f') { # rf
-    @returnval = ($_[5].'i',$_[12].'i');
+  } elsif ($eleven eq 'f') { # rf
+    push @returnval, "${five}i", "${twelve}i";
 
   } else { # rr
-    @returnval = ($_[5].'i',$_[12].'o');
+    push @returnval, "${five}i", "${twelve}o";
   }
 
-  push @returnval, $_[7]-$_[3]-1;           # gap
-  push @returnval, ($_[6],$_[3]+1,$_[7]-1); # readname from to
+  push @returnval, $seven-$three-1;          # gap
+  push @returnval, $six, $three+1, $seven-1; # readname from to
   return @returnval;
 }
 
@@ -839,10 +839,10 @@ sub revcomp {
 }
 
 sub nodeOrientation {
-  my ($node) = @_;
+  my ($str) = @_;
 
-  $node =~ /^(.+)([io]$)/smx;
-  return ($1, $2);
+  my ($node, $orientation) = $str =~ /^(.+)([io]$)/smx;
+  return $node, $orientation;
 }
 
 __END__
