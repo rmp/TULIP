@@ -63,7 +63,7 @@ GetOptions ('coords=s'     => \@mummercoords,
 	    'filter=s'     => \$alignmentquality,
 	    'identity=s'   => \$alignmentidentity,
 	    'memory=s'     => \$maxreadsinmemory,
-	    'mapping=s '   => \$readmappingcutoff,
+	    'mapping=s'    => \$readmappingcutoff,
 	    'extend'       => \$extend,
 	    'allreads'     => \$unusedreads,
 	    'nobundles'    => \$nobundles,
@@ -418,7 +418,7 @@ sub writeScaffolds {
 sub determineseedlength {
 
   if (!$seedlength) {
-    $io_fasta->open($seedsfiles[0]) or croak "Error opening $_\n";
+    $io_fasta = IO::File->new($seedsfiles[0]) or croak "Error opening $_\n";
     my $firstline = (<$io_fasta>);
 
     if ($firstline !~ /^>/smx) {
