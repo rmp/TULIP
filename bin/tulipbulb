@@ -12,6 +12,7 @@ use warnings;
 use IO::File;
 use Carp;
 use English qw(-no_match_vars);
+use List::Util qw(min max);
 
 our $VERSION = q[0.4.0];
 
@@ -21,7 +22,7 @@ our $VERSION = q[0.4.0];
 
 my $version = "$VERSION late 2016 (European eel)";
 my @log     = ("TULIP bundling $version");
-push @log, q[Command line ], join q[ ], $PROGRAM_NAME, @ARGV);
+push @log, q[Command line ], join q[ ], $PROGRAM_NAME, @ARGV;
 push @log, q[Directory ], cwd();
 
 
@@ -31,9 +32,8 @@ my @readsfasta; my @seedsfiles;
 my $seedlength = 0;
 my $fbuffer    = 1000; my $fbuffermax = 5000;
 # my $lengtherror = 0.1; # 10% tolerance        <- currently not used
-my $alignmentquality  = 0.95; # interpreted as min 95% coverage of txhe seed
-my $alignmentidentity = 0; # %identity, (e.g. 0.95 = 95%). Default 0 = no filtering
-my $haploid = 1; my $diploid = 0;        # <- future option?
+my $alignmentquality  = 0.95;       # interpreted as min 95% coverage of txhe seed
+my $alignmentidentity = 0;          # %identity, (e.g. 0.95 = 95%). Default 0 = no filtering
 # my $ploidycutoff = 0.25;
 # my $coverage = 1;
 my $usedalignerseeds  = 0;
@@ -62,8 +62,6 @@ GetOptions ('coords=s'     => \@mummercoords,
 	    'input=s'      => \$infile,
 	    'filter=s'     => \$alignmentquality,
 	    'identity=s'   => \$alignmentidentity,
-	    'diploid'      => \$diploid,
-	    'haploid'      => \$haploid,
 	    'memory=s'     => \$maxreadsinmemory,
 	    'mapping=s '   => \$readmappingcutoff,
 	    'extend'       => \$extend,
@@ -79,7 +77,6 @@ if ($alignmentidentity <0) { printHelp(q[The --identity should be 0 (no filterin
 #if ($coverage < 0) { printHelp(q[The --coverage should be at least 1]); }
 #if ($ploidycutoff < 0) { printHelp(q[The --minorpath should be between 0 and 1]); }
 #if ($ploidycutoff >= 1) { printHelp(q[The --minorpath should be between 0 and 1]); }
-if ($haploid && $diploid) { printHelp(q[--haploid and --diploid are not compatible]); }
 if ((!scalar @mummercoords) && (!scalar @blasr) && (!scalar @daligner) && (!scalar @sam) && (!$configfile)) { printHelp(q[Please specify alignment coordinates]); }
 if (scalar @mummercoords + scalar @blasr + scalar @daligner + scalar @sam > 1) { printHelp(q[Please use the --config option to specify multiple alignment files]); }
 if (!scalar @seedsfiles) { printHelp(q[Please use --seeds to specify seed sequences]); }
@@ -103,7 +100,6 @@ my %scaffoldbundle;   # key counter, entry fasta-format string of reads
 my %seedsequence;     # key seed, entry sequence
 my $seeduse;          # ref to: key seed, entry scaffold nr
 my $scaffold;         # ref to: key counter, entry (R|read|fr|from|to) or (M|name.io); replace (MR|...|...) by (MR|seq) later
-my %allele;           # key path, entry alternative path
 my %fastabuffer; my %recentfastabuffer;
 
 #### MAIN
@@ -136,8 +132,8 @@ sub writeGraph { # 0 ignore;
 
   for my $k1 (sort keys %{$adjacency}) {
     for my $k2 (sort keys %{$$adjacency{$k1}}) {
-      $k1 =~ /^(.+)([io])$/; my @kk1 = ($1, $2);
-      $k2 =~ /^(.+)([io])$/; my @kk2 = ($1, $2);
+      $k1 =~ /^(.+)([io])$/smx; my @kk1 = ($1, $2);
+      $k2 =~ /^(.+)([io])$/smx; my @kk2 = ($1, $2);
       next if ($kk2[0] lt $kk1[0]);
       print $io "$kk1[0]\t$kk1[1]$kk2[1]\t$kk2[0]\t", (join "\t", @{$$adjacency{$k1}{$k2}}), "\n";
     }
@@ -166,8 +162,6 @@ Options:
   --allreads     Export unused reads to a bundle (scaffold 0), default off
   --nobundles    Do not export read bundles, only scaffolds, default off
   --identity     If set, ignore alignments with lesser sequence identity (e.g. 0.9 = 90%), default off (0)
-  --haploid      Treat graph bubbles as errors to be fixed (default)
-  --diploid      Treat graph bubbles as alleles
   --memory       Number of reads to keep in memory before writing to disk, default = 100000        
   --mapping      Fraction of seeds on a read that should belong to the same scaffold, default = 0.8 (80%)
 
@@ -246,7 +240,7 @@ sub graphStats { # note: modified to use a reference to %adjacency
   my @length;
 
   for my $k1 (keys %{$adjacency}) {
-    $k1 =~ /^(.+)([io])$/;
+    $k1 =~ /^(.+)([io])$/smx;
     $seeds{$1} = 1;
     if ($2 eq 'i') { $incount{scalar keys  %{$adjacency->{$k1}}}++; $connectioncount{scalar keys %{$adjacency->{$k1}}}++; }
     if ($2 eq 'o') { $outcount{scalar keys %{$adjacency->{$k1}}}++; $connectioncount{scalar keys %{$adjacency->{$k1}}}++; }
@@ -278,7 +272,7 @@ sub writeReadBundle {
 }
 
 sub readSeeds {
-  my $dalignermode = shift @_;
+  my ($dalignermode) = @_;
   printLog("Adding seed sequences from $seedsfiles[0]");
 
   $io_fasta->open($seedsfiles[0]) or croak "Error opening $_\n";
@@ -287,15 +281,15 @@ sub readSeeds {
   my $counter = 0;
   my @fasta;
 
-  while (<$io_fasta>) {
-    chomp;
+  while (my $line = <$io_fasta>) {
+    chomp $line;
     if (/>/smx) {
       ($totalseedcount, $counter) = storeSeed($fasta[0], $fasta[1], $dalignermode, $totalseedcount, $counter);
-      $fasta[0] = $_;
+      $fasta[0] = $line;
       $fasta[1] = q[];
 
     } else {
-      $fasta[1] .= $_;
+      $fasta[1] .= $line;
     }
   }
 
@@ -330,7 +324,7 @@ sub storeSeed {
 }
 
 sub writeScaffolds {
-  my $outscaffold = sprintf a[%s_scaffold_], $outputprefix;
+  my $outscaffold = sprintf q[%s_scaffold_], $outputprefix;
   my $sccount = 0; my $seqcount = 0;
 
   if ($nobundles) {
@@ -387,7 +381,7 @@ sub writeScaffolds {
       } else { #hypothetical link
         if ($$adjacency{$scafstack[$i]}{$scafstack[$i+1]}[3] > -1) {
           $outseq .= 'n' x int($$adjacency{$scafstack[$i]}{$scafstack[$i+1]}[3]+0.5);
-          print "$scafstack[$i] $scafstack[$i+1]\t", (join q[,], @{$$adjacency{$scafstack[$i]}{$scafstack[$i+1]}}) "\n";
+          print "$scafstack[$i] $scafstack[$i+1]\t", (join q[,], @{$$adjacency{$scafstack[$i]}{$scafstack[$i+1]}}), "\n";
 
         } else {
           $outseq = substr $outseq, 0, int $$adjacency{$scafstack[$i]}{$scafstack[$i+1]}[3];
@@ -434,10 +428,10 @@ sub determineseedlength {
 
     my $secondline;
 
-    while (<$io_fasta>) {
-      chomp;
-      last if ($_ =~ /^>/smx);
-      $secondline .= $_;
+    while (my $line = <$io_fasta>) {
+      chomp $line;
+      last if ($line =~ /^>/smx);
+      $secondline .= $line;
     }
 
     $seedlength = length $secondline;
@@ -485,7 +479,7 @@ sub bundleReads {
   my $filecounter = 0;
   for (@filesstack) {
     my %stack;
-    my @openfile = split /\t/, $_;
+    my @openfile = split /\t/smx, $_;
     $filecounter++;
     my $trackreadnr = 0;
 
@@ -611,8 +605,8 @@ sub readFasta {
     my $seqin    = <$io_fasta>;
     chomp $headerin;
     chomp $seqin;
-    $headerin =~ s/^>//;
-    $headerin =~ s/\s.+$//;
+    $headerin =~ s/^>//smx;
+    $headerin =~ s/\s.+$//smx;
 
     if ($headerin eq $readname) {
       return ($headerin, $seqin, 0);
@@ -696,7 +690,7 @@ sub storeRead {
 }
 
 sub addScaffoldSequence {
-  my $sequence = pop @_;
+  my ($sequence) = @_;
   my @aligninfo = @_; # 0 seed.or 1 seed.or 2 gap 3 name 4 from 5 to
 
   if ($aligninfo[2] > 0) {
@@ -739,14 +733,14 @@ sub sam2Coords {
     return;
   }
 
-  if ($_[5] =~ s/^(\d+)[HS]//) { $clip1 = $1; } # clipping at beginning of CIGAR
-  if ($_[5] =~ s/(\d+)[HS]$//) { $clip2 = $1; } # clipping at end of CIGAR
+  if ($_[5] =~ s/^(\d+)[HS]//smx) { $clip1 = $1; } # clipping at beginning of CIGAR
+  if ($_[5] =~ s/(\d+)[HS]$//smx) { $clip2 = $1; } # clipping at end of CIGAR
 
-  my @splitcigar = split /[MDISH]/,$_[5];
+  my @splitcigar = split /[MDISH]/smx, $_[5];
   my $cigarseed = 0; my $cigarread = 0; my $nomatchcount = 0;
 
   while ($_[5]) {
-    $_[5] =~ s/(\d+)([MID])//;
+    $_[5] =~ s/(\d+)([MID])//smx;
     if ($2 eq 'M') { $cigarseed += $1; $cigarread += $1; }
     if ($2 eq 'I') { $cigarread += $1; $nomatchcount += $1; }
     if ($2 eq 'D') { $cigarseed += $1; $nomatchcount += $1; }
@@ -766,15 +760,11 @@ sub daligner2Coords {
     return;
   }
 
-  $str =~ s/,//g; # thousands separators
-  $str =~ /(\d+)\s+(\d+)\s+([ncNC])[\s\[]+(\d+)[\.\s]+(\d+)[x\s\]\[]+(\d+)[\.\s]+(\d+)[\]\s\<\:]+(\d+)\sdiffs/;  #    1    9 c   [     0.. 1,876] x [ 9,017..10,825] :   <    398 diffs  ( 18 trace pts)
+  $str =~ s/,//smxg; # thousands separators
+  $str =~ /(\d+)\s+(\d+)\s+([ncNC])[\s\[]+(\d+)[\.\s]+(\d+)[x\s\]\[]+(\d+)[\.\s]+(\d+)[\]\s\<\:]+(\d+)\sdiffs/smx;  #    1    9 c   [     0.. 1,876] x [ 9,017..10,825] :   <    398 diffs  ( 18 trace pts)
   # 1seed 2 read 3orientation 4seedstart 5seedend 6readstart 7readend 8diff
 
-  if (lc $3 eq 'n') {
-    return ($6+1,$7,$4+1,$5,$7-$6,$5-$4,1-($8/($5-$4)),$2,$1);
-  }
-
-  return ($6+1,$7,$5,$4+1,$7-$6,$5-$4,1-($8/($5-$4)),$2,$1);
+  return ($6+1,$7, (($3 eq 'n') ? ($4+1,$5) : ($5, $4+1)),$7-$6,$5-$4,1-($8/($5-$4)),$2,$1);
 }
 
 sub extrapolateSeed {
@@ -848,39 +838,11 @@ sub revcomp {
   return scalar reverse $seq;
 }
 
-sub opposite {
-  $_[0] =~ /^(.*)([io]$)/;
-
-  if ($2 eq 'i') {
-    return ($1.'o');
-  }
-
-  return ($1.'i');
-}
-
 sub nodeOrientation {
-  $_[0] =~ /^(.+)([io]$)/;
-  return ($1,$2);
-}
+  my ($node) = @_;
 
-sub node {
-  $_[0] =~ /^(.+)[io]$/;
-  return ($1);
-}
-
-sub orientation {
-  $_[0] =~ /^.+([io]$)/;
-  return ($1);
-}
-
-sub min {
-  @_ = sort {$a <=> $b} @_;
-  return ($_[0]);
-}
-
-sub max {
-  @_ = sort {$b <=> $a} @_;
-  return ($_[0]);
+  $node =~ /^(.+)([io]$)/smx;
+  return ($1, $2);
 }
 
 __END__
@@ -893,15 +855,17 @@ tulipbulb - The Uncorrected Long-read Intergration Process, bundling long reads 
 
 VERSION = q[0.4.0]
 
-=head1 SYNOPSIS
-
 =head1 DESCRIPTION
 
-=head1 SUBROUTINES/METHODS
+=head1 USAGE
 
-=head1 DIAGNOSTICS
+=head1 REQUIRED ARGUMENTS
 
-=head1 CONFIGURATION AND ENVIRONMENT
+=head1 OPTIONS
+
+=head1 EXIT STATUS
+
+=head1 CONFIGURATION
 
 =head1 DEPENDENCIES
 
@@ -926,6 +890,8 @@ VERSION = q[0.4.0]
 =item IO::File
 
 =back
+
+=head1 DIAGNOSTICS
 
 =head1 INCOMPATIBILITIES
 
