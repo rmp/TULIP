@@ -118,30 +118,6 @@ printLog(q[Run ended]);
 writeLog();
 exit;
 
-#### DEBUG
-sub writeGraph { # 0 ignore;
-  my @args = @_;
-
-  if ($args[0] == 0) { return(); }
-
-  my $output = sprintf q[%s.graph], $outputprefix;
-  my $io     = IO::File->new(">$output");
-
-  printLog("Writing graph to $output");
-
-  for my $k1 (sort keys %{$adjacency}) {
-    for my $k2 (sort keys %{$$adjacency{$k1}}) {
-      my @kk1 = $k1 =~ /^(.+)([io])$/smx;
-      my @kk2 = $k2 =~ /^(.+)([io])$/smx;
-      next if ($kk2[0] lt $kk1[0]);
-      print $io "$kk1[0]\t$kk1[1]$kk2[1]\t$kk2[0]\t", (join "\t", @{$$adjacency{$k1}{$k2}}), "\n";
-    }
-  }
-
-  $io->close;
-  return;
-}
-
 #### IO SUBROUTINES
 sub printHelp {
   my ($errstr) = @_;
@@ -166,33 +142,6 @@ Options:
 Author:        Christiaan Henkel, Leiden University & University of Applied Sciences Leiden (c.v.henkel\@biology.leidenuniv.nl)
 Version:       $version
 EOT
-  exit;
-}
-
-sub fastaOrFastq {
-  my ($openfile) = @_;
-
-  my $io = IO::File->new($openfile) or croak "Could not open $openfile for reading";
-
-  my @input;
-  for (my $i = 0; $i < 3; $i++) {
-    $input[$i] = <$io>;
-    chomp $input[$i];
-  }
-
-  $io->close;
-
-  if ($input[0] =~ /^>/smx) {
-    return 'fasta';
-  }
-
-  if ($input[0] =~ /^@/smx) {
-    if ($input[2] =~ /^\+/smx) {
-      return 'fastq';
-    }
-  }
-
-  print "$openfile does not appear to be in either FASTA or FASTQ format\n";
   exit;
 }
 
